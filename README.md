@@ -39,33 +39,6 @@ The NTPC Safety Management System allows users to record safety observations wit
 
 ---
 
-## 📁 Project Structure
-
-ntpc-safety-system/
-├── config/
-│ ├── cloudinary.js # Cloudinary configuration
-│ ├── constants.js # Constants for zones, EIC, departments
-│ └── db.js # MongoDB connection
-├── controllers/
-│ └── observationController.js
-├── middleware/
-│ ├── errorHandler.js
-│ └── validateForm.js
-├── models/
-│ └── Observation.js
-├── public/
-│ └── styles.css
-├── routes/
-│ └── observationRoutes.js
-├── views/
-│ ├── index.ejs
-│ └── observations.ejs
-├── .env
-├── app.js
-├── package.json
-└── README.md
-
----
 
 ## ⚙️ Prerequisites
 
