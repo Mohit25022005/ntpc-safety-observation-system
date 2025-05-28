@@ -16,7 +16,9 @@ const {
     addComment,
     updateCompletionDate,
     approveObservation,
-    rejectObservation
+    rejectObservation,
+    renderVendorSubmissionForm,
+    submitVendorWork
 } = require('../controllers/observationController');
 
 const router = express.Router();
@@ -37,5 +39,7 @@ router.post('/comment', authMiddleware, addComment);
 router.post('/update-date', authMiddleware, updateCompletionDate);
 router.post('/approve', authMiddleware, approveObservation);
 router.post('/reject', authMiddleware, rejectObservation);
+router.get('/vendor/submit/:id', authMiddleware, renderVendorSubmissionForm);
+router.post('/vendor/submit/:id', authMiddleware, upload.single('file'), submitVendorWork);
 
 module.exports = router;

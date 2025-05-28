@@ -53,6 +53,24 @@ const observationSchema = new mongoose.Schema({
     completionDate: {
         type: Date
     },
+    submissions: [{
+        vendorId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        description: {
+            type: String,
+            required: true
+        },
+        fileUrl: {
+            type: String
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     comments: [{
         userId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -67,6 +85,12 @@ const observationSchema = new mongoose.Schema({
             default: Date.now
         }
     }],
+    closedBy: {
+        type: String, // Stores Zone Leader's name
+    },
+    closedAt: {
+        type: Date
+    },
     createdAt: {
         type: Date,
         default: Date.now

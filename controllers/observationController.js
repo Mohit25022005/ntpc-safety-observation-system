@@ -52,7 +52,6 @@ const submitObservation = async (req, res, next) => {
             return res.redirect('/?error=User not found');
         }
 
-        // Validate Zone Leaders
         const validZoneLeaders = await User.find({ name: { $in: Array.isArray(zoneLeaders) ? zoneLeaders : [zoneLeaders] }, role: 'zone_leader' }).select('name');
         if (validZoneLeaders.length !== (Array.isArray(zoneLeaders) ? zoneLeaders.length : 1)) {
             return res.redirect('/?error=Invalid Zone Leader selected');
@@ -110,9 +109,23 @@ const renderDashboard = async (req, res, next) => {
             observations = await Observation.find({ userId: req.user.id });
             res.render('dashboards/normal', { user, observations, successMessage, errorMessage });
         } else if (role === 'zone_leader') {
-            observations = await Observation.find({ zoneLeaders: { $in: [user.name] } }).populate('comments.userId');
+            observations = await Observation.find({ 
+                zoneLeaders: { $in: [user.name] },
+                status: { $ne: 'closed' } // Exclude closed observations
+            }).populate('comments.userId');
+            const closedObservations = await Observation.find({ 
+                closedBy: user.name,
+                status: 'closed'
+            }).populate('comments.userId');
             const vendors = await User.find({ role: 'vendor' });
-            res.render('dashboards/zone_leader', { user, observations, vendors, successMessage, errorMessage });
+            res.render('dashboards/zone_leader', { 
+                user, 
+                observations, 
+                closedObservations, 
+                vendors, 
+                successMessage, 
+                errorMessage 
+            });
         } else if (role === 'eic') {
             observations = await Observation.find({ eic: user.name }).populate('comments.userId');
             const vendors = await User.find({ role: 'vendor' });
@@ -124,6 +137,7 @@ const renderDashboard = async (req, res, next) => {
             res.status(403).json({ error: 'Invalid role' });
         }
     } catch (err) {
+        console.error('Render dashboard error:', err);
         next(err);
     }
 };
@@ -135,13 +149,11 @@ const editObservation = async (req, res, next) => {
             return res.redirect('/dashboard?error=Observation not found');
         }
 
-        // Ensure zoneLeaders is an array
         if (!Array.isArray(observation.zoneLeaders)) {
             observation.zoneLeaders = observation.zoneLeaders ? [observation.zoneLeaders] : [];
             await observation.save();
         }
 
-        // Restrict access: Normal Users can only edit their own; Zone Leaders/EICs can edit if assigned
         const user = await User.findById(req.user.id);
         if (req.user.role === 'normal' && observation.userId.toString() !== req.user.id) {
             return res.redirect('/dashboard?error=Unauthorized');
@@ -154,7 +166,7 @@ const editObservation = async (req, res, next) => {
         }
 
         const zoneLeaders = await User.find({ role: 'zone_leader' }).select('name');
-        console.log('Rendering edit form for observation:', observation._id, 'zoneLeaders:', observation.zoneLeaders); // Debug log
+        console.log('Rendering edit form for observation:', observation._id, 'zoneLeaders:', observation.zoneLeaders);
         res.render('edit_observation', {
             observation,
             zones,
@@ -186,7 +198,6 @@ const updateObservation = async (req, res, next) => {
             return res.redirect('/dashboard?error=Observation not found');
         }
 
-        // Restrict access
         const user = await User.findById(req.user.id);
         if (req.user.role === 'normal' && observation.userId.toString() !== req.user.id) {
             return res.redirect('/dashboard?error=Unauthorized');
@@ -198,7 +209,6 @@ const updateObservation = async (req, res, next) => {
             return res.redirect('/dashboard?error=Unauthorized');
         }
 
-        // Validate Zone Leaders
         const validZoneLeaders = await User.find({ name: { $in: Array.isArray(zoneLeaders) ? zoneLeaders : [zoneLeaders] }, role: 'zone_leader' }).select('name');
         if (validZoneLeaders.length !== (Array.isArray(zoneLeaders) ? zoneLeaders.length : 1)) {
             return res.redirect(`/observation/edit/${req.params.id}?error=Invalid Zone Leader selected`);
@@ -248,11 +258,9 @@ const deleteObservation = async (req, res, next) => {
             return res.redirect('/dashboard?error=Observation not found');
         }
 
-        // Restrict access: Only Normal Users can delete their own observations
         if (req.user.role === 'normal' && observation.userId.toString() !== req.user.id) {
             return res.redirect('/dashboard?error=Unauthorized');
         }
-        // Optionally, allow Zone Leaders/EICs to delete if assigned
         const user = await User.findById(req.user.id);
         if (req.user.role === 'zone_leader' && !observation.zoneLeaders.includes(user.name)) {
             return res.redirect('/dashboard?error=Unauthorized');
@@ -275,6 +283,7 @@ const forwardToVendor = async (req, res, next) => {
         await Observation.findByIdAndUpdate(observationId, { vendorId, status: 'forwarded' });
         res.redirect('/dashboard?success=Observation forwarded to vendor');
     } catch (err) {
+        console.error('Forward to vendor error:', err);
         next(err);
     }
 };
@@ -282,9 +291,22 @@ const forwardToVendor = async (req, res, next) => {
 const closeObservation = async (req, res, next) => {
     const { observationId } = req.body;
     try {
-        await Observation.findByIdAndUpdate(observationId, { status: 'closed' });
+        const user = await User.findById(req.user.id);
+        if (req.user.role !== 'zone_leader') {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+        const observation = await Observation.findById(observationId);
+        if (!observation.zoneLeaders.includes(user.name)) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+        await Observation.findByIdAndUpdate(observationId, { 
+            status: 'closed',
+            closedBy: user.name,
+            closedAt: new Date()
+        });
         res.redirect('/dashboard?success=Observation closed');
     } catch (err) {
+        console.error('Close observation error:', err);
         next(err);
     }
 };
@@ -297,6 +319,7 @@ const addComment = async (req, res, next) => {
         });
         res.redirect('/dashboard?success=Comment added');
     } catch (err) {
+        console.error('Add comment error:', err);
         next(err);
     }
 };
@@ -307,6 +330,7 @@ const updateCompletionDate = async (req, res, next) => {
         await Observation.findByIdAndUpdate(observationId, { completionDate });
         res.redirect('/dashboard?success=Completion date updated');
     } catch (err) {
+        console.error('Update completion date error:', err);
         next(err);
     }
 };
@@ -317,6 +341,7 @@ const approveObservation = async (req, res, next) => {
         await Observation.findByIdAndUpdate(observationId, { status: 'approved' });
         res.redirect('/dashboard?success=Observation approved');
     } catch (err) {
+        console.error('Approve observation error:', err);
         next(err);
     }
 };
@@ -327,6 +352,70 @@ const rejectObservation = async (req, res, next) => {
         await Observation.findByIdAndUpdate(observationId, { status: 'rejected' });
         res.redirect('/dashboard?success=Observation rejected');
     } catch (err) {
+        console.error('Reject observation error:', err);
+        next(err);
+    }
+};
+
+const renderVendorSubmissionForm = async (req, res, next) => {
+    try {
+        const observation = await Observation.findById(req.params.id);
+        if (!observation) {
+            return res.redirect('/dashboard?error=Observation not found');
+        }
+        if (observation.vendorId.toString() !== req.user.id) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+        res.render('vendor_submission', { observation, errorMessage: null });
+    } catch (err) {
+        console.error('Render vendor submission form error:', err);
+        next(err);
+    }
+};
+
+const submitVendorWork = async (req, res, next) => {
+    const { observationId, description } = req.body;
+    try {
+        const observation = await Observation.findById(observationId);
+        if (!observation) {
+            return res.redirect('/dashboard?error=Observation not found');
+        }
+        if (observation.vendorId.toString() !== req.user.id) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+
+        let fileUrl = '';
+        if (req.file) {
+            const result = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        resource_type: 'auto',
+                        folder: 'ntpc_safety_submissions',
+                        allowed_formats: ['pdf', 'jpeg', 'jpg', 'doc', 'docx']
+                    },
+                    (error, result) => {
+                        if (error) return reject(error);
+                        resolve(result);
+                    }
+                );
+                uploadStream.end(req.file.buffer);
+            });
+            fileUrl = result.secure_url;
+        }
+
+        await Observation.findByIdAndUpdate(observationId, {
+            $push: {
+                submissions: {
+                    vendorId: req.user.id,
+                    description,
+                    fileUrl
+                }
+            }
+        });
+
+        res.redirect('/dashboard?success=Work submitted successfully');
+    } catch (err) {
+        console.error('Submit vendor work error:', err);
         next(err);
     }
 };
@@ -346,5 +435,7 @@ module.exports = {
     addComment,
     updateCompletionDate,
     approveObservation,
-    rejectObservation
+    rejectObservation,
+    renderVendorSubmissionForm,
+    submitVendorWork
 };

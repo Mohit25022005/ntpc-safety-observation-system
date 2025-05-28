@@ -1,57 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Vendor Dashboard - NTPC Safety Management</title>
-        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    </head>
-    <body class="bg-gray-100">
-        <div class="container mx-auto p-4">
-            <div class="flex justify-between items-center mb-4">
-                <h1 class="text-2xl font-bold">Welcome, <%= user.name %> (Vendor)</h1>
-                <button onclick="confirmLogout()" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">Logout</button>
-            </div>
-            <% if (successMessage) { %>
-                <p class="text-green-500 mb-4"><%= successMessage %></p>
-            <% } %>
-            <% if (errorMessage) { %>
-                <p class="text-red-500 mb-4"><%= errorMessage %></p>
-            <% } %>
-            <h2 class="text-xl font-semibold mb-2">Assigned Observations</h2>
-            <table class="w-full border">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="border p-2">Description</th>
-                        <th class="border p-2">Status</th>
-                        <th class="border p-2">Completion Date</th>
-                        <th class="border p-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% observations.forEach(obs => { %>
-                        <tr>
-                            <td class="border p-2"><%= obs.description %></td>
-                            <td class="border p-2"><%= obs.status %></td>
-                            <td class="border p-2"><%= obs.completionDate ? obs.completionDate.toLocaleDateString() : 'Not Set' %></td>
-                            <td class="border p-2">
-                                <form action="/update-date" method="POST">
-                                    <input type="hidden" name="observationId" value="<%= obs._id %>">
-                                    <input type="date" name="completionDate" value="<%= obs.completionDate ? obs.completionDate.toISOString().split('T')[0] : '' %>" class="p-1 border rounded-md">
-                                    <button type="submit" class="bg-blue-500 text-white p-1 rounded-md mt-1">Update Date</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <% }) %>
-                </tbody>
-            </table>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard - NTPC Safety Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold">Welcome, <%= user.name %> (Vendor)</h1>
+            <button onclick="confirmLogout()" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">Logout</button>
         </div>
-        <script>
-            function confirmLogout() {
-                if (confirm('Are you sure you want to logout?')) {
-                    window.location.href = '/auth/logout';
-                }
+        <% if (successMessage) { %>
+            <p class="text-green-500 mb-4"><%= successMessage %></p>
+        <% } %>
+        <% if (errorMessage) { %>
+            <p class="text-red-500 mb-4"><%= errorMessage %></p>
+        <% } %>
+        <h2 class="text-xl font-semibold mb-2">Assigned Observations</h2>
+        <table class="w-full border">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border p-2">Description</th>
+                    <th class="border p-2">Status</th>
+                    <th class="border p-2">Completion Date</th>
+                    <th class="border p-2">Submissions</th>
+                    <th class="border p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% observations.forEach(obs => { %>
+                    <tr>
+                        <td class="border p-2"><%= obs.description %></td>
+                        <td class="border p-2"><%= obs.status %></td>
+                        <td class="border p-2"><%= obs.completionDate ? obs.completionDate.toLocaleDateString() : 'Not Set' %></td>
+                        <td class="border p-2">
+                            <% if (obs.submissions && obs.submissions.length > 0) { %>
+                                <% obs.submissions.forEach(sub => { %>
+                                    <p><strong><%= sub.createdAt.toLocaleString() %>:</strong> <%= sub.description %>
+                                        <% if (sub.fileUrl) { %>
+                                            (<a href="<%= sub.fileUrl %>" target="_blank">View File</a>)
+                                        <% } %>
+                                    </p>
+                                <% }) %>
+                            <% } else { %>
+                                <p>No submissions</p>
+                            <% } %>
+                        </td>
+                        <td class="border p-2">
+                            <a href="/vendor/submit/<%= obs._id %>" class="bg-blue-500 text-white p-1 rounded-md">Submit Work</a>
+                            <form action="/update-date" method="POST" class="mt-2">
+                                <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                <input type="date" name="completionDate" value="<%= obs.completionDate ? obs.completionDate.toISOString().split('T')[0] : '' %>" class="p-1 border rounded-md">
+                                <button type="submit" class="bg-blue-500 text-white p-1 rounded-md mt-1">Update Date</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        function confirmLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/auth/logout';
             }
-        </script>
-    </body>
+        }
+    </script>
+</body>
 </html>
