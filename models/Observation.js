@@ -16,7 +16,8 @@ const observationSchema = new mongoose.Schema({
     },
     zoneLeaders: {
         type: [String],
-        required: true
+        required: true,
+        default: []
     },
     eic: {
         type: String,
@@ -27,8 +28,7 @@ const observationSchema = new mongoose.Schema({
         required: true
     },
     eicMobile: {
-        type: String,
-        required: true
+        type: String
     },
     location: {
         type: String,
@@ -39,19 +39,13 @@ const observationSchema = new mongoose.Schema({
         required: true
     },
     uploadedFileUrl: {
-        type: String,
-        default: ''
+        type: String
     },
     status: {
         type: String,
         enum: ['pending', 'approved', 'rejected', 'forwarded', 'closed'],
         default: 'pending'
     },
-    comments: [{
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        comment: String,
-        createdAt: { type: Date, default: Date.now }
-    }],
     vendorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -59,6 +53,20 @@ const observationSchema = new mongoose.Schema({
     completionDate: {
         type: Date
     },
+    comments: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        comment: {
+            type: String,
+            required: true
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     createdAt: {
         type: Date,
         default: Date.now

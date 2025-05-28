@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Observation Form - NTPC Safety Management</title>
+    <title>Edit Observation - NTPC Safety Management</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">Record Safety Observation</h1>
+        <h1 class="text-2xl font-bold mb-4">Edit Observation</h1>
         <% if (errorMessage) { %>
             <p class="text-red-500 mb-4"><%= errorMessage %></p>
         <% } %>
-        <form action="/submit" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow-lg">
+        <form action="/observation/update/<%= observation._id %>" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow-lg">
             <div class="mb-4">
                 <label for="zone" class="block text-sm font-medium text-gray-700">Zone</label>
                 <select id="zone" name="zone" class="mt-1 p-2 w-full border rounded-md" required>
                     <option value="">Select Zone</option>
                     <% zones.forEach(zone => { %>
-                        <option value="<%= zone %>"><%= zone %></option>
+                        <option value="<%= zone %>" <%= observation.zone === zone ? 'selected' : '' %>><%= zone %></option>
                     <% }) %>
                 </select>
             </div>
@@ -26,7 +26,7 @@
                 <label for="zoneLeaders" class="block text-sm font-medium text-gray-700">Zone Leaders</label>
                 <select id="zoneLeaders" name="zoneLeaders" multiple class="mt-1 p-2 w-full border rounded-md" required>
                     <% zoneLeaders.forEach(leader => { %>
-                        <option value="<%= leader %>"><%= leader %></option>
+                        <option value="<%= leader %>" <%= Array.isArray(observation.zoneLeaders) && observation.zoneLeaders.includes(leader) ? 'selected' : '' %>><%= leader %></option>
                     <% }) %>
                 </select>
             </div>
@@ -35,7 +35,7 @@
                 <select id="eic" name="eic" class="mt-1 p-2 w-full border rounded-md" required>
                     <option value="">Select EIC</option>
                     <% eicList.forEach(eic => { %>
-                        <option value="<%= eic %>"><%= eic %></option>
+                        <option value="<%= eic %>" <%= observation.eic === eic ? 'selected' : '' %>><%= eic %></option>
                     <% }) %>
                 </select>
             </div>
@@ -44,27 +44,31 @@
                 <select id="department" name="department" class="mt-1 p-2 w-full border rounded-md" required>
                     <option value="">Select Department</option>
                     <% departments.forEach(dept => { %>
-                        <option value="<%= dept %>"><%= dept %></option>
+                        <option value="<%= dept %>" <%= observation.department === dept ? 'selected' : '' %>><%= dept %></option>
                     <% }) %>
                 </select>
             </div>
             <div class="mb-4">
                 <label for="eicMobile" class="block text-sm font-medium text-gray-700">EIC Mobile</label>
-                <input type="text" id="eicMobile" name="eicMobile" class="mt-1 p-2 w-full border rounded-md">
+                <input type="text" id="eicMobile" name="eicMobile" value="<%= observation.eicMobile || '' %>" class="mt-1 p-2 w-full border rounded-md">
             </div>
             <div class="mb-4">
                 <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
-                <input type="text" id="location" name="location" class="mt-1 p-2 w-full border rounded-md" required>
+                <input type="text" id="location" name="location" value="<%= observation.location %>" class="mt-1 p-2 w-full border rounded-md" required>
             </div>
             <div class="mb-4">
                 <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                <textarea id="description" name="description" class="mt-1 p-2 w-full border rounded-md" required></textarea>
+                <textarea id="description" name="description" class="mt-1 p-2 w-full border rounded-md" required><%= observation.description %></textarea>
             </div>
             <div class="mb-4">
-                <label for="file" class="block text-sm font-medium text-gray-700">Upload File</label>
+                <label for="file" class="block text-sm font-medium text-gray-700">Upload New File (optional)</label>
                 <input type="file" id="file" name="file" class="mt-1 p-2 w-full border rounded-md" accept=".pdf,.jpeg,.jpg,.doc,.docx">
+                <% if (observation.uploadedFileUrl) { %>
+                    <p class="text-sm text-gray-600">Current file: <a href="<%= observation.uploadedFileUrl %>" target="_blank">View</a></p>
+                <% } %>
             </div>
-            <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Submit</button>
+            <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Update Observation</button>
+            <a href="/dashboard" class="ml-4 text-blue-500 hover:underline">Cancel</a>
         </form>
     </div>
 </body>
