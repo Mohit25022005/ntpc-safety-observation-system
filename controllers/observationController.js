@@ -28,6 +28,12 @@ const submitObservation = async (req, res, next) => {
     } = req.body;
 
     try {
+        // Fetch user to get the name
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.redirect('/?error=User not found');
+        }
+
         let uploadedFileUrl = '';
 
         if (req.file) {
@@ -51,7 +57,7 @@ const submitObservation = async (req, res, next) => {
 
         const observation = new Observation({
             userId: req.user.id,
-            userName: req.user.name,
+            userName: user.name, // Use the fetched user's name
             zone,
             zoneLeaders,
             eic,
