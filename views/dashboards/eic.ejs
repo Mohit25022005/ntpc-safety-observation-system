@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIC Dashboard - NTPC Safety Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Welcome, <%= user.name %> (EIC)</h1>
+        <% if (successMessage) { %>
+            <p class="text-green-500 mb-4"><%= successMessage %></p>
+        <% } %>
+        <% if (errorMessage) { %>
+            <p class="text-red-500 mb-4"><%= errorMessage %></p>
+        <% } %>
+        <h2 class="text-xl font-semibold mb-2">Assigned Observations</h2>
+        <table class="w-full border">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border p-2">Description</th>
+                    <th class="border p-2">Status</th>
+                    <th class="border p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% observations.forEach(obs => { %>
+                    <tr>
+                        <td class="border p-2"><%= obs.description %></td>
+                        <td class="border p-2"><%= obs.status %></td>
+                        <td class="border p-2">
+                            <% if (obs.status === 'pending') { %>
+                                <form action="/approve" method="POST" class="inline-block">
+                                    <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                    <button type="submit" class="bg-blue-500 text-white p-1 rounded-md">Approve</button>
+                                </form>
+                                <form action="/reject" method="POST" class="inline-block ml-2">
+                                    <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                    <button type="submit" class="bg-red-500 text-white p-1 rounded-md">Reject</button>
+                                </form>
+                            <% } %>
+                            <% if (obs.status === 'approved') { %>
+                                <form action="/forward" method="POST">
+                                    <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                    <select name="vendorId" class="p-1 border rounded-md">
+                                        <option value="">Select Vendor</option>
+                                        <% vendors.forEach(vendor => { %>
+                                            <option value="<%= vendor._id %>"><%= vendor.name %></option>
+                                        <% }) %>
+                                    </select>
+                                    <button type="submit" class="bg-green-500 text-white p-1 rounded-md mt-1">Forward to Vendor</button>
+                                </form>
+                            <% } %>
+                            <% if (obs.status === 'forwarded') { %>
+                                <form action="/close" method="POST">
+                                    <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                    <button type="submit" class="bg-gray-500 text-white p-1 rounded-md">Close</button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
