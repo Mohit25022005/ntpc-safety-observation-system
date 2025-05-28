@@ -6,13 +6,13 @@ const { zones, eicList, departments } = require('../config/constants');
 
 const router = express.Router();
 
-// Configure Multer to store files in memory (for Cloudinary upload)
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+    limits: { fileSize: 2 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const fileTypes = /pdf|jpeg|jpg|doc|docx/;
+        console.log('Uploaded file mimetype:', file.mimetype); // Debug log
         const extname = fileTypes.test(file.mimetype.toLowerCase());
         if (extname) {
             return cb(null, true);
@@ -21,10 +21,21 @@ const upload = multer({
     }
 });
 
-// Pass zones, eicList, and departments directly to renderForm
-router.get('/', (req, res) => renderForm(req, res, { zones, eicList, departments }));
+router.get('/', (req, res) => {
+    const successMessage = req.query.success || null;
+    const errorMessage = req.query.error || null;
+    renderForm(req, res, { zones, eicList, departments, successMessage, errorMessage });
+});
 router.get('/eic-options', getEICOptions);
 router.get('/departments', getDepartments);
-router.post('/submit', upload.single('document'), validateForm, submitObservation);
+
+const handleMulterError = (err, req, res, next) => {
+    if (err instanceof multer.MulterError || err.message) {
+        return res.redirect(`/?error=${encodeURIComponent(err.message)}`);
+    }
+    next(err);
+};
+
+router.post('/submit', upload.single('document'), handleMulterError, validateForm, submitObservation);
 
 module.exports = router;
