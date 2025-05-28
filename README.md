@@ -45,11 +45,19 @@ The NTPC Safety Management System allows users to record safety observations wit
 Make sure you have:
 
 - **Node.js** v20.16.0 or later
-- **MongoDB** running locally (`mongodb://localhost/ntpc_safety`)
+- **MongoDB** give mongo_uri in your .env file
 - **Cloudinary Account** (sign up at [cloudinary.com](https://cloudinary.com))
   - Enable PDF delivery in **Settings → Security → Allow delivery of PDF and ZIP files**
 
+- 
 ---
+
+## dotenv file
+- MONGO_URI=mongodb://localhost/ntpc_safety  or your mongo atlas uri
+- PORT=3000
+- CLOUDINARY_CLOUD_NAME=your_cloud_name
+- CLOUDINARY_API_KEY=your_api_key
+- CLOUDINARY_API_SECRET=your_api_secret
 
 ## 🚀 Installation
 
