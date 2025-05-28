@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 
 const signup = async (req, res, next) => {
     const { email, password, name, role } = req.body;
+    console.log('Signup request body:', req.body); // Debug log
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -11,11 +12,16 @@ const signup = async (req, res, next) => {
 
         const user = new User({ email, password, name, role });
         await user.save();
+        console.log('User saved:', user); // Debug log
 
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.cookie('jwt', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
         res.redirect('/dashboard');
     } catch (err) {
+        console.error('Signup error:', err); // Debug log
+        if (err.code === 11000) {
+            return res.redirect('/auth/signup?error=Duplicate key error. Please try a different email or contact support.');
+        }
         next(err);
     }
 };
