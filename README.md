@@ -69,4 +69,6 @@ cd ntpc-safety-system
 
 npm install
 
+nodemon server.js
+
 
