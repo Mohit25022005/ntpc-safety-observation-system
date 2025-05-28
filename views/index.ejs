@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NTPC Safety Management System</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <h1>Record Safety Observations</h1>
+    <form action="/submit" method="POST" enctype="multipart/form-data">
+        <label>User ID:</label>
+        <input type="text" name="userId" required><br>
+
+        <label>User Name:</label>
+        <input type="text" name="userName" required><br>
+
+        <label>Safety Zone:</label>
+        <select name="zone" required>
+            <option value="">--Select Safety Zone--</option>
+            <% zones.forEach(zone => { %>
+                <option value="<%= zone %>"><%= zone %></option>
+            <% }) %>
+        </select><br>
+
+        <label>Zone Leaders:</label>
+        <input type="text" name="zoneLeaders" required><br>
+
+        <label>EIC (If Required):</label>
+        <select name="eic" required>
+            <option value="">--Select EIC--</option>
+            <% eicList.forEach(eic => { %>
+                <option value="<%= eic %>"><%= eic %></option>
+            <% }) %>
+        </select><br>
+
+        <label>Department:</label>
+        <select name="department" required>
+            <option value="">--Select Department--</option>
+            <% departments.forEach(dept => { %>
+                <option value="<%= dept %>"><%= dept %></option>
+            <% }) %>
+        </select><br>
+
+        <label>EIC Mobile:</label>
+        <input type="text" name="eicMobile" required><br>
+
+        <label>Specific Area/Location:</label>
+        <input type="text" name="location" required><br>
+
+        <label>Observation-dot-orgObservation Description:</label>
+        <textarea name="description" required></textarea><br>
+
+        <label>Upload Document (PDF/JPG/DOC, up to 2MB):</label>
+        <input type="file" name="document"><br>
+
+        <input type="submit" value="Save">
+    </formF2: true,
+    "eicMobile": true,
+    "eic": true,
+    "department": true,
+    "location": true,
+    "description": true
+}   
+
+</form>
+</body>
+</html>
