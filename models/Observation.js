@@ -50,6 +50,12 @@ const observationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    forwardedBy: {
+        type: String // Name of Zone Leader or EIC who forwarded
+    },
+    forwardedAt: {
+        type: Date
+    },
     completionDate: {
         type: Date
     },
@@ -74,7 +80,8 @@ const observationSchema = new mongoose.Schema({
     comments: [{
         userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
+            ref: 'User',
+            required: true
         },
         comment: {
             type: String,
@@ -86,7 +93,7 @@ const observationSchema = new mongoose.Schema({
         }
     }],
     closedBy: {
-        type: String, // Stores Zone Leader's name
+        type: String // EIC's name
     },
     closedAt: {
         type: Date

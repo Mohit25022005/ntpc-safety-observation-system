@@ -11,9 +11,11 @@ const renderForm = async (req, res, next) => {
             eicList,
             departments,
             zoneLeaders: zoneLeaders.map(leader => leader.name),
-            errorMessage: req.query.error || null
+            errorMessage: req.query.error || null,
+            user: req.user
         });
     } catch (err) {
+        console.error('Render form error:', err);
         next(err);
     }
 };
@@ -105,18 +107,20 @@ const renderDashboard = async (req, res, next) => {
         const errorMessage = req.query.error || null;
 
         let observations;
+        let closedObservations = [];
         if (role === 'normal') {
-            observations = await Observation.find({ userId: req.user.id });
+            observations = await Observation.find({ userId: req.user.id })
+                .populate('comments.userId')
+                .populate('submissions.vendorId');
             res.render('dashboards/normal', { user, observations, successMessage, errorMessage });
         } else if (role === 'zone_leader') {
             observations = await Observation.find({ 
-                zoneLeaders: { $in: [user.name] },
-                status: { $ne: 'closed' } // Exclude closed observations
-            }).populate('comments.userId');
-            const closedObservations = await Observation.find({ 
+                zoneLeaders: { $in: [user.name] }
+            }).populate('comments.userId').populate('submissions.vendorId');
+            closedObservations = await Observation.find({ 
                 closedBy: user.name,
                 status: 'closed'
-            }).populate('comments.userId');
+            }).populate('comments.userId').populate('submissions.vendorId');
             const vendors = await User.find({ role: 'vendor' });
             res.render('dashboards/zone_leader', { 
                 user, 
@@ -127,11 +131,19 @@ const renderDashboard = async (req, res, next) => {
                 errorMessage 
             });
         } else if (role === 'eic') {
-            observations = await Observation.find({ eic: user.name }).populate('comments.userId');
+            observations = await Observation.find({ eic: user.name })
+                .populate('comments.userId')
+                .populate('submissions.vendorId');
+            closedObservations = await Observation.find({ 
+                closedBy: user.name,
+                status: 'closed'
+            }).populate('comments.userId').populate('submissions.vendorId');
             const vendors = await User.find({ role: 'vendor' });
-            res.render('dashboards/eic', { user, observations, vendors, successMessage, errorMessage });
+            res.render('dashboards/eic', { user, observations, closedObservations, vendors, successMessage, errorMessage });
         } else if (role === 'vendor') {
-            observations = await Observation.find({ vendorId: req.user.id }).populate('comments.userId');
+            observations = await Observation.find({ vendorId: req.user.id })
+                .populate('comments.userId')
+                .populate('submissions.vendorId');
             res.render('dashboards/vendor', { user, observations, successMessage, errorMessage });
         } else {
             res.status(403).json({ error: 'Invalid role' });
@@ -166,14 +178,14 @@ const editObservation = async (req, res, next) => {
         }
 
         const zoneLeaders = await User.find({ role: 'zone_leader' }).select('name');
-        console.log('Rendering edit form for observation:', observation._id, 'zoneLeaders:', observation.zoneLeaders);
         res.render('edit_observation', {
             observation,
             zones,
             eicList,
             departments,
             zoneLeaders: zoneLeaders.map(leader => leader.name),
-            errorMessage: null
+            errorMessage: null,
+            user
         });
     } catch (err) {
         console.error('Edit observation error:', err);
@@ -280,7 +292,23 @@ const deleteObservation = async (req, res, next) => {
 const forwardToVendor = async (req, res, next) => {
     const { observationId, vendorId } = req.body;
     try {
-        await Observation.findByIdAndUpdate(observationId, { vendorId, status: 'forwarded' });
+        const user = await User.findById(req.user.id);
+        if (!['zone_leader', 'eic'].includes(req.user.role)) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+        const observation = await Observation.findById(observationId);
+        if (req.user.role === 'zone_leader' && !observation.zoneLeaders.includes(user.name)) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+        if (req.user.role === 'eic' && observation.eic !== user.name) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
+        await Observation.findByIdAndUpdate(observationId, { 
+            vendorId, 
+            status: 'forwarded',
+            forwardedBy: user.name,
+            forwardedAt: new Date()
+        });
         res.redirect('/dashboard?success=Observation forwarded to vendor');
     } catch (err) {
         console.error('Forward to vendor error:', err);
@@ -292,11 +320,11 @@ const closeObservation = async (req, res, next) => {
     const { observationId } = req.body;
     try {
         const user = await User.findById(req.user.id);
-        if (req.user.role !== 'zone_leader') {
+        if (req.user.role !== 'eic') {
             return res.redirect('/dashboard?error=Unauthorized');
         }
         const observation = await Observation.findById(observationId);
-        if (!observation.zoneLeaders.includes(user.name)) {
+        if (observation.eic !== user.name) {
             return res.redirect('/dashboard?error=Unauthorized');
         }
         await Observation.findByIdAndUpdate(observationId, { 
@@ -314,8 +342,31 @@ const closeObservation = async (req, res, next) => {
 const addComment = async (req, res, next) => {
     const { observationId, comment } = req.body;
     try {
+        const observation = await Observation.findById(observationId);
+        if (!observation) {
+            return res.redirect('/dashboard?error=Observation not found');
+        }
+        const user = await User.findById(req.user.id);
+        let isAuthorized = false;
+        if (req.user.role === 'normal' && observation.userId.toString() === req.user.id) {
+            isAuthorized = true;
+        } else if (req.user.role === 'zone_leader' && observation.zoneLeaders.includes(user.name)) {
+            isAuthorized = true;
+        } else if (req.user.role === 'eic' && observation.eic === user.name) {
+            isAuthorized = true;
+        } else if (req.user.role === 'vendor' && observation.vendorId && observation.vendorId.toString() === req.user.id) {
+            isAuthorized = true;
+        }
+        if (!isAuthorized) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
         await Observation.findByIdAndUpdate(observationId, {
-            $push: { comments: { userId: req.user.id, comment } }
+            $push: { 
+                comments: { 
+                    userId: req.user.id, 
+                    comment 
+                } 
+            }
         });
         res.redirect('/dashboard?success=Comment added');
     } catch (err) {
@@ -327,6 +378,10 @@ const addComment = async (req, res, next) => {
 const updateCompletionDate = async (req, res, next) => {
     const { observationId, completionDate } = req.body;
     try {
+        const observation = await Observation.findById(observationId);
+        if (!observation || observation.vendorId.toString() !== req.user.id) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
         await Observation.findByIdAndUpdate(observationId, { completionDate });
         res.redirect('/dashboard?success=Completion date updated');
     } catch (err) {
@@ -338,6 +393,11 @@ const updateCompletionDate = async (req, res, next) => {
 const approveObservation = async (req, res, next) => {
     const { observationId } = req.body;
     try {
+        const observation = await Observation.findById(observationId);
+        const user = await User.findById(req.user.id);
+        if (req.user.role !== 'eic' || observation.eic !== user.name) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
         await Observation.findByIdAndUpdate(observationId, { status: 'approved' });
         res.redirect('/dashboard?success=Observation approved');
     } catch (err) {
@@ -349,6 +409,11 @@ const approveObservation = async (req, res, next) => {
 const rejectObservation = async (req, res, next) => {
     const { observationId } = req.body;
     try {
+        const observation = await Observation.findById(observationId);
+        const user = await User.findById(req.user.id);
+        if (req.user.role !== 'eic' || observation.eic !== user.name) {
+            return res.redirect('/dashboard?error=Unauthorized');
+        }
         await Observation.findByIdAndUpdate(observationId, { status: 'rejected' });
         res.redirect('/dashboard?success=Observation rejected');
     } catch (err) {
@@ -366,7 +431,7 @@ const renderVendorSubmissionForm = async (req, res, next) => {
         if (observation.vendorId.toString() !== req.user.id) {
             return res.redirect('/dashboard?error=Unauthorized');
         }
-        res.render('vendor_submission', { observation, errorMessage: null });
+        res.render('vendor_submission', { observation, errorMessage: null, user: req.user });
     } catch (err) {
         console.error('Render vendor submission form error:', err);
         next(err);
