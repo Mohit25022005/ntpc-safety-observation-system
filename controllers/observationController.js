@@ -145,6 +145,16 @@ const renderDashboard = async (req, res, next) => {
                 .populate('comments.userId')
                 .populate('submissions.vendorId');
             res.render('dashboards/vendor', { user, observations, successMessage, errorMessage });
+        } else if (role === 'admin') {
+            // Admin can see all observations
+            observations = await Observation.find()
+                .populate('comments.userId')
+                .populate('submissions.vendorId');
+            closedObservations = await Observation.find({ status: 'closed' })
+                .populate('comments.userId')
+                .populate('submissions.vendorId');
+            const vendors = await User.find({ role: 'vendor' });
+            res.render('dashboards/admin', { user, observations, closedObservations, vendors, successMessage, errorMessage });
         } else {
             res.status(403).json({ error: 'Invalid role' });
         }

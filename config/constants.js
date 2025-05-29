@@ -24,7 +24,8 @@ const eicList = [
     "B.C. Badu",
     "Sandeep Kumar Das",
     "S.B. Mandal",
-    "Vishal Mathur"
+    "Vishal Mathur",
+    "eicUser1"
 ];
 
 const departments = [

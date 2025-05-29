@@ -15,12 +15,14 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['normal', 'zone_leader', 'eic', 'vendor'],
+        enum: ['normal', 'zone_leader', 'eic', 'vendor', 'admin'], // Added 'admin' for future use
         default: 'normal'
     },
     name: {
         type: String,
-        required: true
+        required: true,
+        unique: true, // Ensure unique names for EICs
+        trim: true
     },
     createdAt: {
         type: Date,
