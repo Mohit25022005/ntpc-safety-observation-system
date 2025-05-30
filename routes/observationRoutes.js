@@ -22,7 +22,7 @@ const {
     reviewAndForwardToZoneLeader,
     resolveObservation,
     zoneLeaderCloseObservation,
-    zoneLeaderResendToVendor
+    zoneLeaderResendToVendor,
 } = require('../controllers/observationController');
 
 const router = express.Router();
