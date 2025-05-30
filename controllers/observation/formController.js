@@ -21,6 +21,8 @@ const renderForm = async (req, res, next) => {
         const errorMessage = req.query.error || null;
 
         res.render('index', {
+            layout: 'layouts/main',
+            title: 'Home',
             user: req.user,
             eics,
             successMessage,

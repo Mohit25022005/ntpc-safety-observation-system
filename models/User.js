@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     zone: {
         type: String,
-        enum: [...ZONES, null],
+        enum: [...ZONES, null,""],
         required: function () {
             return this.role === 'zone_leader';
         },
