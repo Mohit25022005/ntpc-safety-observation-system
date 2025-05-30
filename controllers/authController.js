@@ -1,16 +1,18 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { ZONES } = require('../config/zones'); // ✅ Import zones
 
 const signup = async (req, res, next) => {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, zone, department } = req.body;
     console.log('Signup request body:', req.body); // Debug log
+
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.redirect('/auth/signup?error=Email already exists');
         }
 
-        const user = new User({ email, password, name, role });
+        const user = new User({ email, password, name, role, zone, department });
         await user.save();
         console.log('User saved:', user); // Debug log
 
@@ -54,7 +56,17 @@ const renderLogin = (req, res) => {
 
 const renderSignup = (req, res) => {
     const errorMessage = req.query.error || null;
-    res.render('signup', { errorMessage });
+    res.render('signup', { 
+        errorMessage, 
+        zones: ZONES, 
+        user: req.user || null // Pass user, even if null
+    });
 };
 
-module.exports = { signup, login, logout, renderLogin, renderSignup };
+module.exports = {
+    signup,
+    login,
+    logout,
+    renderLogin,
+    renderSignup
+};

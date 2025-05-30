@@ -17,7 +17,7 @@
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
-    <%- include('partials/navbar') %>
+    <%- include('../partials/navbar') %>
     <div class="container my-5">
         <div class="card p-4">
             <h1 class="card-title text-center mb-4">Welcome, <%= user.name %> (Admin)</h1>
@@ -33,76 +33,57 @@
                     <thead>
                         <tr>
                             <th>Zone</th>
-                            <th>Zone Leaders</th>
-                            <th>EIC</th>
-                            <th>Department</th>
-                            <th>Location</th>
                             <th>Description</th>
-                            <th>File</th>
                             <th>Status</th>
-                            <th>Comments</th>
-                            <th>Submissions</th>
                             <th>Created At</th>
-                            <th>Forwarded By</th>
-                            <th>Forwarded At</th>
-                            <th>Closed By</th>
-                            <th>Closed At</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <% observations.forEach(obs => { %>
                             <tr>
                                 <td><%= obs.zone %></td>
-                                <td><%= Array.isArray(obs.zoneLeaders) ? obs.zoneLeaders.join(', ') : obs.zoneLeaders || 'N/A' %></td>
-                                <td><%= obs.eic || 'N/A' %></td>
-                                <td><%= obs.department %></td>
-                                <td><%= obs.location %></td>
-                                <td><%= obs.description %></td>
-                                <td>
-                                    <% if (obs.uploadedFileUrl) { %>
-                                        <a href="<%= obs.uploadedFileUrl %>" target="_blank">View</a>
-                                    <% } else { %>
-                                        N/A
-                                    <% } %>
-                                </td>
+                                <td><%= obs.description.length > 50 ? obs.description.substring(0, 50) + '...' : obs.description %></td>
                                 <td>
                                     <span class="badge badge-<%= obs.status === 'pending' ? 'pending' : obs.status === 'forwarded' ? 'forwarded' : obs.status === 'closed' ? 'closed' : obs.status === 'approved' ? 'approved' : 'rejected' %>">
                                         <%= obs.status %>
                                     </span>
                                 </td>
+                                <td><%= obs.createdAt.toLocaleString() %></td>
                                 <td>
-                                    <% if (obs.comments && obs.comments.length > 0) { %>
-                                        <ul>
-                                            <% obs.comments.forEach(comment => { %>
-                                                <li><strong><%= comment.userId.name %>:</strong> <%= comment.comment %> (<%= comment.createdAt.toLocaleString() %>)</li>
-                                            <% }) %>
-                                        </ul>
-                                    <% } else { %>
-                                        No comments
-                                    <% } %>
+                                    <a href="/issue/<%= obs._id %>" class="btn btn-sm btn-primary">View Details</a>
                                 </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+            <h3>Closed Observations</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Zone</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% closedObservations.forEach(obs => { %>
+                            <tr>
+                                <td><%= obs.zone %></td>
+                                <td><%= obs.description.length > 50 ? obs.description.substring(0, 50) + '...' : obs.description %></td>
                                 <td>
-                                    <% if (obs.submissions && obs.submissions.length > 0) { %>
-                                        <ul>
-                                            <% obs.submissions.forEach(submission => { %>
-                                                <li>
-                                                    <strong><%= submission.vendorId.name %>:</strong> <%= submission.description %> 
-                                                    <% if (submission.fileUrl) { %>
-                                                        (<a href="<%= submission.fileUrl %>" target="_blank">View File</a>)
-                                                    <% } %>
-                                                    (<%= submission.createdAt.toLocaleString() %>)
-                                                </li>
-                                            <% }) %>
-                                        </ul>
-                                    <% } else { %>
-                                        No submissions
-                                    <% } %>
+                                    <span class="badge badge-<%= obs.status === 'pending' ? 'pending' : obs.status === 'forwarded' ? 'forwarded' : obs.status === 'closed' ? 'closed' : obs.status === 'approved' ? 'approved' : 'rejected' %>">
+                                        <%= obs.status %>
+                                    </span>
                                 </td>
                                 <td><%= obs.createdAt.toLocaleString() %></td>
-                                <td><%= obs.forwardedBy || 'N/A' %></td>
-                                <td><%= obs.forwardedAt ? obs.forwardedAt.toLocaleString() : 'N/A' %></td>
-                                <td><%= obs.closedBy || 'N/A' %></td>
-                                <td><%= obs.closedAt ? obs.closedAt.toLocaleString() : 'N/A' %></td>
+                                <td>
+                                    <a href="/issue/<%= obs._id %>" class="btn btn-sm btn-primary">View Details</a>
+                                </td>
                             </tr>
                         <% }) %>
                     </tbody>
@@ -110,7 +91,7 @@
             </div>
         </div>
     </div>
-    <%- include('partials/footer') %>
+    <%- include('../partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

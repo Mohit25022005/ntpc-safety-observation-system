@@ -8,8 +8,13 @@
     <style>
         body { background-color: #f4f7fa; }
         .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .table { border-radius: 8px; overflow: hidden; }
-        .btn-sm { font-size: 0.8rem; }
+        .table-responsive { margin-top: 20px; }
+        .badge-pending { background-color: #ffc107; }
+        .badge-forwarded { background-color: #17a2b8; }
+        .badge-closed { background-color: #28a745; }
+        .badge-approved { background-color: #007bff; }
+        .badge-rejected { background-color: #dc3545; }
+        .badge-under_review { background-color: #6c757d; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -23,70 +28,50 @@
             <% if (errorMessage) { %>
                 <div class="alert alert-danger"><%= errorMessage %></div>
             <% } %>
-            <h2 class="h4 mb-3">Assigned Observations</h2>
+            <h3>Assigned Observations</h3>
             <div class="table-responsive">
                 <table class="table table-striped">
-                    <thead class="table-dark">
+                    <thead>
                         <tr>
+                            <th>Zone</th>
                             <th>Description</th>
+                            <th>Severity</th>
                             <th>Status</th>
-                            <th>Timestamps</th>
-                            <th>Comments</th>
-                            <th>Submissions</th>
+                            <th>Created At</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <% observations.forEach(obs => { %>
                             <tr>
-                                <td><%= obs.description %></td>
+                                <td><%= obs.zone %></td>
+                                <td><%= obs.description.length > 50 ? obs.description.substring(0, 50) + '...' : obs.description %></td>
+                                <td><%= obs.severity %></td>
                                 <td>
-                                    <span class="badge bg-<%= obs.status === 'pending' ? 'warning' : obs.status === 'approved' ? 'success' : obs.status === 'rejected' ? 'danger' : obs.status === 'forwarded' ? 'info' : 'secondary' %>">
+                                    <span class="badge badge-<%= obs.status === 'pending' ? 'pending' : obs.status === 'forwarded' ? 'forwarded' : obs.status === 'closed' ? 'closed' : obs.status === 'approved' ? 'approved' : obs.status === 'rejected' ? 'rejected' : 'under_review' %>">
                                         <%= obs.status %>
                                     </span>
-                                    <% if (obs.forwardedBy) { %>
-                                        <p class="small text-muted">Forwarded by <%= obs.forwardedBy %></p>
-                                    <% } %>
                                 </td>
+                                <td><%= obs.createdAt.toLocaleString() %></td>
                                 <td>
-                                    <p class="small">Raised: <%= obs.createdAt.toLocaleString() %></p>
-                                    <% if (obs.forwardedAt) { %>
-                                        <p class="small">Forwarded: <%= obs.forwardedAt.toLocaleString() %></p>
-                                    <% } %>
-                                    <% if (obs.closedAt) { %>
-                                        <p class="small">Closed: <%= obs.closedAt.toLocaleString() %></p>
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <% obs.comments.forEach(comment => { %>
-                                        <p class="small"><strong><%= comment.userId.name %>:</strong> <%= comment.comment %> (<%= comment.createdAt.toLocaleString() %>)</p>
-                                    <% }) %>
-                                    <form action="/comment" method="POST">
+                                    <a href="/issue/<%= obs._id %>" class="btn btn-sm btn-primary">View Details</a>
+                                    <form action="/comment" method="POST" style="display:inline;">
                                         <input type="hidden" name="observationId" value="<%= obs._id %>">
-                                        <textarea name="comment" class="form-control mb-2" placeholder="Add a comment" required></textarea>
-                                        <button type="submit" class="btn btn-sm btn-primary">Comment</button>
+                                        <input type="text" name="comment" placeholder="Add comment" required style="width: 150px; display: inline-block;" class="form-control form-control-sm d-inline">
+                                        <button type="submit" class="btn btn-sm btn-secondary">Comment</button>
                                     </form>
-                                </td>
-                                <td>
-                                    <% if (obs.submissions && obs.submissions.length > 0) { %>
-                                        <% obs.submissions.forEach(sub => { %>
-                                            <p class="small"><strong><%= sub.vendorId.name %>:</strong> <%= sub.description %> (<%= sub.createdAt.toLocaleString() %>)
-                                                <% if (sub.fileUrl) { %>
-                                                    <a href="<%= sub.fileUrl %>" target="_blank">View File</a>
-                                                <% } %>
-                                            </p>
-                                        <% }) %>
-                                    <% } else { %>
-                                        <p class="small text-muted">No submissions</p>
+                                    <a href="/vendor/submit/<%= obs._id %>" class="btn btn-sm btn-info">Submit Work</a>
+                                    <% if (obs.status === 'forwarded') { %>
+                                        <form action="/update-date" method="POST" style="display:inline;">
+                                            <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                            <input type="date" name="completionDate" required class="form-control form-control-sm d-inline" style="width: 150px; display: inline-block;">
+                                            <button type="submit" class="btn btn-sm btn-success">Set Date</button>
+                                        </form>
+                                        <form action="/vendor/resolve" method="POST" style="display:inline;">
+                                            <input type="hidden" name="observationId" value="<%= obs._id %>">
+                                            <button type="submit" class="btn btn-sm btn-success">Resolve</button>
+                                        </form>
                                     <% } %>
-                                </td>
-                                <td>
-                                    <a href="/vendor/submit/<%= obs._id %>" class="btn btn-sm btn-primary">Submit Work</a>
-                                    <form action="/update-date" method="POST" class="mt-2">
-                                        <input type="hidden" name="observationId" value="<%= obs._id %>">
-                                        <input type="date" name="completionDate" value="<%= obs.completionDate ? obs.completionDate.toISOString().split('T')[0] : '' %>" class="form-control form-control-sm mb-2">
-                                        <button type="submit" class="btn btn-sm btn-primary">Update Date</button>
-                                    </form>
                                 </td>
                             </tr>
                         <% }) %>

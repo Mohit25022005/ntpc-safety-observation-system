@@ -8,8 +8,6 @@
     <style>
         body { background-color: #f4f7fa; }
         .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #007bff; border: none; }
-        .btn-primary:hover { background-color: #0056b3; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -17,33 +15,38 @@
     <div class="container my-5">
         <div class="card p-4">
             <h1 class="card-title text-center mb-4">Record Safety Observation</h1>
+            <% if (successMessage) { %>
+                <div class="alert alert-success"><%= successMessage %></div>
+            <% } %>
             <% if (errorMessage) { %>
                 <div class="alert alert-danger"><%= errorMessage %></div>
             <% } %>
             <form action="/submit" method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="zone" class="form-label">Zone</label>
-                    <select id="zone" name="zone" class="form-select" required>
-                        <option value="">Select Zone</option>
-                        <% zones.forEach(zone => { %>
-                            <option value="<%= zone %>"><%= zone %></option>
-                        <% }) %>
+                    <select id="zone" name="zone" class="form-select" required onchange="fetchZoneLeaders()">
+                        <option value="">Select Safety Zone</option>
+                        <% if (zones && Array.isArray(zones)) { %>
+                            <% zones.forEach(zone => { %>
+                                <option value="<%= zone %>"><%= zone %></option>
+                            <% }) %>
+                        <% } else { %>
+                            <option value="" disabled>No zones available</option>
+                        <% } %>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label for="zoneLeaders" class="form-label">Zone Leaders</label>
-                    <select id="zoneLeaders" name="zoneLeaders" multiple class="form-select" required>
-                        <% zoneLeaders.forEach(leader => { %>
-                            <option value="<%= leader %>"><%= leader %></option>
-                        <% }) %>
+                    <select id="zoneLeaders" name="zoneLeaders" class="form-select" multiple required>
+                        <option value="">Select Zone Leaders</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label for="eic" class="form-label">EIC</label>
                     <select id="eic" name="eic" class="form-select" required>
                         <option value="">Select EIC</option>
-                        <% eicList.forEach(eic => { %>
-                            <option value="<%= eic %>"><%= eic %></option>
+                        <% eics.forEach(eic => { %>
+                            <option value="<%= eic.name %>"><%= eic.name %></option>
                         <% }) %>
                     </select>
                 </div>
@@ -51,14 +54,7 @@
                     <label for="department" class="form-label">Department</label>
                     <select id="department" name="department" class="form-select" required>
                         <option value="">Select Department</option>
-                        <% departments.forEach(dept => { %>
-                            <option value="<%= dept %>"><%= dept %></option>
-                        <% }) %>
                     </select>
-                </div>
-                <div class="mb-3">
-                    <label for="eicMobile" class="form-label">EIC Mobile</label>
-                    <input type="text" id="eicMobile" name="eicMobile" class="form-control">
                 </div>
                 <div class="mb-3">
                     <label for="location" class="form-label">Location</label>
@@ -69,14 +65,105 @@
                     <textarea id="description" name="description" class="form-control" required></textarea>
                 </div>
                 <div class="mb-3">
-                    <label for="file" class="form-label">Upload File</label>
-                    <input type="file" id="file" name="file" class="form-control" accept=".pdf,.jpeg,.jpg,.doc,.docx">
+                    <label for="severity" class="form-label">Severity</label>
+                    <select id="severity" name="severity" class="form-select" required>
+                        <option value="">Select Severity</option>
+                        <option value="small">Small</option>
+                        <option value="normal">Normal</option>
+                        <option value="extreme">Extreme</option>
+                    </select>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Submit</button>
+                <div class="mb-3">
+                    <label for="file" class="form-label">Upload File (Optional)</label>
+                    <input type="file" id="file" name="file" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Submit Observation</button>
             </form>
         </div>
     </div>
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function fetchZoneLeaders() {
+            const zone = document.getElementById('zone').value;
+            const zoneLeadersSelect = document.getElementById('zoneLeaders');
+            zoneLeadersSelect.innerHTML = '<option value="">Select Zone Leaders</option>';
+
+            if (!zone) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/zone-leaders?zone=${encodeURIComponent(zone)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const zoneLeaders = await response.json();
+
+                if (Array.isArray(zoneLeaders) && zoneLeaders.length > 0) {
+                    zoneLeaders.forEach(leader => {
+                        if (leader && leader.name) {
+                            const option = document.createElement('option');
+                            option.value = leader.name;
+                            option.text = leader.name;
+                            zoneLeadersSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = 'No Zone Leaders found';
+                    option.disabled = true;
+                    zoneLeadersSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Error fetching Zone Leaders:', error);
+                const option = document.createElement('option');
+                option.value = '';
+                option.text = 'Error loading Zone Leaders';
+                option.disabled = true;
+                zoneLeadersSelect.appendChild(option);
+            }
+        }
+
+        async function fetchDepartments() {
+            const departmentSelect = document.getElementById('department');
+            departmentSelect.innerHTML = '<option value="">Select Department</option>';
+
+            try {
+                const response = await fetch('/departments');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const departments = await response.json();
+
+                if (Array.isArray(departments) && departments.length > 0) {
+                    departments.forEach(dept => {
+                        if (dept) { // Ensure dept is not null or undefined
+                            const option = document.createElement('option');
+                            option.value = dept;
+                            option.text = dept;
+                            departmentSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = 'No departments available';
+                    option.disabled = true;
+                    departmentSelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+                const option = document.createElement('option');
+                option.value = '';
+                option.text = 'Error loading departments';
+                option.disabled = true;
+                departmentSelect.appendChild(option);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchDepartments);
+    </script>
 </body>
 </html>
