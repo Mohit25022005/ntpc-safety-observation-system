@@ -1,6 +1,261 @@
-<footer class="bg-dark text-white py-4 mt-auto">
-    <div class="container text-center">
-        <p>© 2025 NTPC Safety Management System. All rights reserved.</p>
-        <p>Contact: safety@ntpc.com | Phone: +91-123-456-7890</p>
+<style>
+    :root {
+        --ntpc-primary: #1e3a8a;
+        --ntpc-secondary: #3b82f6;
+        --ntpc-accent: #10b981;
+        --ntpc-dark: #0f172a;
+        --ntpc-light: #f8fafc;
+    }
+
+    .footer-enhanced {
+        background: linear-gradient(135deg, var(--ntpc-dark) 0%, var(--ntpc-primary) 100%) !important;
+        position: relative;
+        overflow: hidden;
+        border-top: 3px solid var(--ntpc-accent);
+        box-shadow: 0 -4px 20px rgba(30, 58, 138, 0.2);
+    }
+
+    /* Subtle pattern overlay */
+    .footer-enhanced::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        pointer-events: none;
+    }
+
+    .footer-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .footer-brand {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(45deg, #ffffff, var(--ntpc-accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .footer-divider {
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--ntpc-accent), transparent);
+        margin: 1.5rem 0;
+        border-radius: 2px;
+    }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 25px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .contact-item:hover {
+        background: rgba(16, 185, 129, 0.2);
+        border-color: var(--ntpc-accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .contact-icon {
+        color: var(--ntpc-accent);
+        font-size: 1.1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .contact-item:hover .contact-icon {
+        transform: scale(1.2);
+    }
+
+    .contact-link {
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .contact-link:hover {
+        color: var(--ntpc-accent);
+        text-decoration: none;
+    }
+
+    .copyright-text {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .safety-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(16, 185, 129, 0.2);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        border: 1px solid var(--ntpc-accent);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        animation: pulse 3s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+    }
+
+    .footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin: 1rem 0;
+        flex-wrap: wrap;
+    }
+
+    .footer-link {
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .footer-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .footer-link:hover::before {
+        left: 100%;
+    }
+
+    .footer-link:hover {
+        color: var(--ntpc-accent);
+        background: rgba(255, 255, 255, 0.1);
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .contact-info {
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .contact-item {
+            width: 100%;
+            max-width: 300px;
+            justify-content: center;
+        }
+        
+        .footer-links {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .footer-brand {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Animation for footer entrance */
+    @keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .footer-enhanced {
+        animation: slideUp 0.6s ease-out;
+    }
+</style>
+
+<footer class="footer-enhanced text-white py-5 mt-auto">
+    <div class="container">
+        <div class="footer-content text-center">
+            <!-- Enhanced Brand Section -->
+            <div class="footer-brand">
+                NTPC Safety Management System
+            </div>
+            
+            <!-- Safety Badge -->
+            <div class="safety-badge">
+                <i class="fas fa-shield-alt"></i>
+                Safety First, Always
+            </div>
+            
+            <!-- Divider -->
+            <div class="footer-divider"></div>
+            
+            <!-- Enhanced Contact Information -->
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="fas fa-envelope contact-icon"></i>
+                    <a href="mailto:safety@ntpc.com" class="contact-link">safety@ntpc.com</a>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone contact-icon"></i>
+                    <a href="tel:+911234567890" class="contact-link">+91-123-456-7890</a>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-clock contact-icon"></i>
+                    <span class="contact-link">24/7 Emergency Support</span>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div class="footer-links">
+                <a href="/privacy" class="footer-link">Privacy Policy</a>
+                <a href="/terms" class="footer-link">Terms of Service</a>
+                <a href="/help" class="footer-link">Help Center</a>
+                <a href="/emergency" class="footer-link">Emergency Contacts</a>
+            </div>
+            
+            <!-- Copyright -->
+            <div class="copyright-text">
+                <p class="mb-1">© 2025 NTPC Safety Management System. All rights reserved.</p>
+                <p class="mb-0">
+                    <small>Committed to workplace safety and environmental protection</small>
+                </p>
+            </div>
+        </div>
     </div>
 </footer>
+
+<!-- Font Awesome for icons (if not already included) -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">

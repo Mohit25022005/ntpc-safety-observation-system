@@ -1,7 +1,206 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<style>
+    :root {
+        --ntpc-primary: #1e3a8a;
+        --ntpc-secondary: #3b82f6;
+        --ntpc-accent: #10b981;
+        --ntpc-danger: #ef4444;
+    }
+
+    .navbar-enhanced {
+        background: linear-gradient(135deg, var(--ntpc-primary) 0%, var(--ntpc-secondary) 100%) !important;
+        box-shadow: 0 4px 20px rgba(30, 58, 138, 0.3);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.75rem 0;
+    }
+
+    .navbar-brand {
+        font-weight: 700;
+        font-size: 1.3rem;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .navbar-brand:hover {
+        transform: translateY(-1px);
+        text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+        color: #ffffff !important;
+    }
+
+    .logo-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .logo-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50px;
+        height: 50px;
+        background: radial-gradient(circle, var(--ntpc-accent) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: 50%;
+    }
+
+    .navbar-brand:hover .logo-glow {
+        opacity: 0.6;
+    }
+
+    .nav-link {
+        position: relative;
+        font-weight: 500;
+        padding: 0.5rem 1rem !important;
+        margin: 0 0.25rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .nav-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .nav-link:hover::before {
+        left: 100%;
+    }
+
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #ffffff !important;
+    }
+
+    .nav-link.active {
+        background: var(--ntpc-accent);
+        color: white !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .navbar-toggler {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .navbar-toggler:hover {
+        border-color: var(--ntpc-accent);
+        background: rgba(16, 185, 129, 0.1);
+    }
+
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.5);
+    }
+
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    .portal-title {
+        background: linear-gradient(45deg, #ffffff, #e2e8f0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .logout-link {
+        background: linear-gradient(45deg, var(--ntpc-danger), #dc2626);
+        border-radius: 8px;
+        padding: 0.5rem 1rem !important;
+        margin-left: 0.5rem;
+        transition: all 0.3s ease;
+        color: white !important;
+        font-weight: 500;
+    }
+
+    .logout-link:hover {
+        background: linear-gradient(45deg, #dc2626, #b91c1c);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        color: white !important;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: var(--ntpc-accent);
+    }
+
+    @media (max-width: 991px) {
+        .navbar-nav {
+            background: rgba(30, 58, 138, 0.95);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logout-link {
+            margin-left: 0;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+    }
+
+    /* Add subtle animation to navbar on load */
+    @keyframes slideDown {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .navbar-enhanced {
+        animation: slideDown 0.6s ease-out;
+    }
+
+    /* Enhance the container */
+    .navbar .container {
+        position: relative;
+    }
+
+    /* Add a subtle pattern overlay */
+    .navbar-enhanced::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        pointer-events: none;
+    }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark navbar-enhanced">
     <div class="container">
-        <a class="navbar-brand" href="/dashboard">NTPC Safety Management</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+            <div class="logo-container me-2">
+                <div class="logo-glow"></div>
+                <img src="/images/ntpc-logo.png" alt="NTPC Logo" height="45" class="me-2" style="position: relative; z-index: 1;">
+            </div>
+            <span class="portal-title">ONLINE SAFETY PORTAL</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -16,17 +215,58 @@
                         </li>
                     <% } %>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="confirmLogout()">Logout (<%= user.name %>)</a>
+                        <a class="nav-link logout-link" href="#" onclick="confirmLogout()">
+                            Logout (<span class="user-name"><%= user.name %></span>)
+                        </a>
                     </li>
                 <% } %>
             </ul>
         </div>
     </div>
 </nav>
+
 <script>
     function confirmLogout() {
         if (confirm('Are you sure you want to logout?')) {
-            window.location.href = '/auth/logout';
+            // Add loading state to logout button
+            const logoutLink = document.querySelector('.logout-link');
+            const originalText = logoutLink.innerHTML;
+            logoutLink.innerHTML = 'Logging out...';
+            logoutLink.style.pointerEvents = 'none';
+            
+            // Small delay for better UX
+            setTimeout(() => {
+                window.location.href = '/auth/logout';
+            }, 500);
         }
     }
+
+    // Add active state management
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link:not(.logout-link)');
+        
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // Add scroll effect for enhanced experience
+    let lastScrollTop = 0;
+    window.addEventListener('scroll', function() {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const navbar = document.querySelector('.navbar-enhanced');
+        
+        if (scrollTop > 100) {
+            navbar.style.background = 'linear-gradient(135deg, rgba(30, 58, 138, 0.95) 0%, rgba(59, 130, 246, 0.95) 100%)';
+            navbar.style.backdropFilter = 'blur(15px)';
+        } else {
+            navbar.style.background = 'linear-gradient(135deg, var(--ntpc-primary) 0%, var(--ntpc-secondary) 100%)';
+            navbar.style.backdropFilter = 'blur(10px)';
+        }
+        
+        lastScrollTop = scrollTop;
+    });
 </script>

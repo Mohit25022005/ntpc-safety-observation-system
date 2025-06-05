@@ -51,7 +51,10 @@ const logout = (req, res) => {
 
 const renderLogin = (req, res) => {
     const errorMessage = req.query.error || null;
-    res.render('login', { errorMessage });
+    res.render('login', { 
+        errorMessage,
+        user: req.user || null 
+    });
 };
 
 const renderSignup = (req, res) => {

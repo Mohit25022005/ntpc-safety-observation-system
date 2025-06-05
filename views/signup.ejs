@@ -5,77 +5,683 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signup - NTPC Safety Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7fa; }
-        .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        :root {
+            --ntpc-primary: #1e3a8a;
+            --ntpc-secondary: #3b82f6;
+            --ntpc-accent: #10b981;
+            --ntpc-danger: #ef4444;
+            --ntpc-dark: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%),
+                        url('/images/bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: float 20s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-60px); }
+        }
+
+        .signup-container {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding: 2rem 0;
+        }
+
+        .signup-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            max-width: 500px;
+            margin: 2rem auto;
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .signup-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--ntpc-primary), var(--ntpc-accent), var(--ntpc-secondary));
+            border-radius: 20px 20px 0 0;
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .signup-title {
+            color: var(--ntpc-primary);
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, var(--ntpc-primary), var(--ntpc-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .signup-subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .brand-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--ntpc-primary), var(--ntpc-accent));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            box-shadow: 0 8px 20px rgba(30, 58, 138, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .brand-logo i {
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            color: var(--ntpc-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(30, 58, 138, 0.1);
+            border-radius: 12px;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-select {
+            padding-left: 3rem;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: var(--ntpc-accent);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ntpc-primary);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .form-control:focus + .input-icon,
+        .form-select:focus + .input-icon {
+            color: var(--ntpc-accent);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .btn-signup {
+            background: linear-gradient(45deg, var(--ntpc-primary), var(--ntpc-secondary));
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            color: white;
+        }
+
+        .btn-signup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-signup:hover::before {
+            left: 100%;
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.4);
+            background: linear-gradient(45deg, var(--ntpc-secondary), var(--ntpc-accent));
+        }
+
+        .btn-signup:active {
+            transform: translateY(0);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--ntpc-danger);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(30, 58, 138, 0.1);
+        }
+
+        .login-link p {
+            color: #6b7280;
+            margin-bottom: 0;
+        }
+
+        .login-link a {
+            color: var(--ntpc-accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .login-link a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--ntpc-accent);
+            transition: width 0.3s ease;
+        }
+
+        .login-link a:hover::after {
+            width: 100%;
+        }
+
+        .login-link a:hover {
+            color: var(--ntpc-primary);
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 25px;
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--ntpc-accent);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--ntpc-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: var(--ntpc-accent);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .zone-field {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-bottom: 0;
+        }
+
+        .zone-field.show {
+            opacity: 1;
+            max-height: 100px;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .signup-card {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .signup-title {
+                font-size: 1.8rem;
+            }
+            
+            .brand-logo {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        /* Loading animation */
+        .btn-loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Form validation styles */
+        .form-control.is-valid,
+        .form-select.is-valid {
+            border-color: var(--ntpc-accent);
+            background-image: none;
+        }
+
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: var(--ntpc-danger);
+            background-image: none;
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .strength-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: #e5e7eb;
+            margin-top: 0.25rem;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-weak { background: var(--ntpc-danger); width: 25%; }
+        .strength-fair { background: #f59e0b; width: 50%; }
+        .strength-good { background: #10b981; width: 75%; }
+        .strength-strong { background: var(--ntpc-accent); width: 100%; }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
     <%- include('partials/navbar') %>
-    <div class="container my-5">
-        <div class="card p-4">
-            <h1 class="card-title text-center mb-4">Signup</h1>
-            <% if (errorMessage) { %>
-                <div class="alert alert-danger"><%= errorMessage %></div>
-            <% } %>
-            <form action="/auth/signup" method="POST">
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name</label>
-                    <input type="text" id="name" name="name" class="form-control" required>
+    
+    <div class="container-fluid signup-container d-flex align-items-center">
+        <div class="row w-100 justify-content-end">
+            <div class="col-md-6 col-lg-5 me-lg-5">
+                <div class="signup-card">
+                    <div class="signup-header">
+                        <div class="brand-logo">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h1 class="signup-title">Join Us Today</h1>
+                        <p class="signup-subtitle">Create your NTPC Safety Portal account</p>
+                    </div>
+                    
+                    <% if (errorMessage) { %>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <%= errorMessage %>
+                        </div>
+                    <% } %>
+                    
+                    <form action="/auth/signup" method="POST" id="signupForm">
+                        <div class="form-group">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                            <i class="fas fa-user input-icon"></i>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" id="email" name="email" class="form-control" required>
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" id="password" name="password" class="form-control" required>
+                            <i class="fas fa-lock input-icon"></i>
+                            <button type="button" class="password-toggle" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                            <div class="password-strength" id="passwordStrength" style="display: none;">
+                                <div class="strength-text">Password strength: <span id="strengthText">Weak</span></div>
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strengthFill"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role</label>
+                            <select id="role" name="role" class="form-select" required onchange="toggleZoneField()">
+                                <option value="">Select Your Role</option>
+                                <option value="normal">Normal User</option>
+                                <option value="zone_leader">Zone Leader</option>
+                                <option value="eic">EIC</option>
+                                <option value="vendor">Vendor</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <i class="fas fa-briefcase input-icon"></i>
+                        </div>
+                        
+                        <div class="form-group zone-field" id="zoneField">
+                            <label for="zone" class="form-label">Safety Zone</label>
+                            <select id="zone" name="zone" class="form-select">
+                                <option value="">Select Safety Zone</option>
+                                <% zones.forEach(zone => { %>
+                                    <option value="<%= zone %>"><%= zone %></option>
+                                <% }) %>
+                            </select>
+                            <i class="fas fa-map-marker-alt input-icon"></i>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="department" class="form-label">Department <span style="color: #6b7280; font-size: 0.8rem;">(Optional)</span></label>
+                            <input type="text" id="department" name="department" class="form-control" placeholder="Enter your department">
+                            <i class="fas fa-building input-icon"></i>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-signup" id="signupBtn">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Create Account
+                        </button>
+                        
+                       
+                    </form>
+                    
+                    <div class="login-link">
+                        <p>Already have an account? <a href="/auth/login">Log In</a></p>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" name="email" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" name="password" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="role" class="form-label">Role</label>
-                    <select id="role" name="role" class="form-select" required onchange="toggleZoneField()">
-                        <option value="">Select Role</option>
-                        <option value="normal">Normal User</option>
-                        <option value="zone_leader">Zone Leader</option>
-                        <option value="eic">EIC</option>
-                        <option value="vendor">Vendor</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div class="mb-3" id="zoneField" style="display: none;">
-                    <label for="zone" class="form-label">Zone</label>
-                    <select id="zone" name="zone" class="form-select">
-                        <option value="">Select Safety Zone</option>
-                        <% zones.forEach(zone => { %>
-                            <option value="<%= zone %>"><%= zone %></option>
-                        <% }) %>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="department" class="form-label">Department (Optional)</label>
-                    <input type="text" id="department" name="department" class="form-control">
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Signup</button>
-            </form>
-            <div class="text-center mt-3">
-                <p>Already have an account? <a href="/auth/login">Login</a></p>
             </div>
         </div>
     </div>
+
     <%- include('partials/footer') %>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
         function toggleZoneField() {
             const role = document.getElementById('role').value;
             const zoneField = document.getElementById('zoneField');
+            const zoneSelect = document.getElementById('zone');
+            
             if (role === 'zone_leader') {
-                zoneField.style.display = 'block';
-                document.getElementById('zone').setAttribute('required', 'required');
+                zoneField.classList.add('show');
+                zoneSelect.setAttribute('required', 'required');
             } else {
-                zoneField.style.display = 'none';
-                document.getElementById('zone').removeAttribute('required');
+                zoneField.classList.remove('show');
+                zoneSelect.removeAttribute('required');
+                zoneSelect.value = '';
             }
         }
+
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            const strengthIndicator = document.getElementById('passwordStrength');
+            const strengthText = document.getElementById('strengthText');
+            const strengthFill = document.getElementById('strengthFill');
+            
+            if (password.length === 0) {
+                strengthIndicator.style.display = 'none';
+                return;
+            }
+            
+            strengthIndicator.style.display = 'block';
+            
+            let score = 0;
+            let feedback = '';
+            
+            // Length check
+            if (password.length >= 8) score += 1;
+            if (password.length >= 12) score += 1;
+            
+            // Character variety
+            if (/[a-z]/.test(password)) score += 1;
+            if (/[A-Z]/.test(password)) score += 1;
+            if (/[0-9]/.test(password)) score += 1;
+            if (/[^A-Za-z0-9]/.test(password)) score += 1;
+            
+            // Set strength level
+            strengthFill.className = 'strength-fill';
+            if (score <= 2) {
+                strengthFill.classList.add('strength-weak');
+                strengthText.textContent = 'Weak';
+                strengthText.style.color = '#ef4444';
+            } else if (score <= 3) {
+                strengthFill.classList.add('strength-fair');
+                strengthText.textContent = 'Fair';
+                strengthText.style.color = '#f59e0b';
+            } else if (score <= 4) {
+                strengthFill.classList.add('strength-good');
+                strengthText.textContent = 'Good';
+                strengthText.style.color = '#10b981';
+            } else {
+                strengthFill.classList.add('strength-strong');
+                strengthText.textContent = 'Strong';
+                strengthText.style.color = '#10b981';
+            }
+        }
+
+        // Form submission with loading state
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const signupBtn = document.getElementById('signupBtn');
+            signupBtn.classList.add('btn-loading');
+            signupBtn.innerHTML = '<span>Creating Account...</span>';
+        });
+
+        // Add focus animations to inputs
+        document.querySelectorAll('.form-control, .form-select').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+
+        // Password strength real-time checking
+        document.getElementById('password').addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+        });
+
+        // Email validation
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email && !emailRegex.test(email)) {
+                this.classList.add('is-invalid');
+            } else if (email) {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // Name validation
+        document.getElementById('name').addEventListener('blur', function() {
+            const name = this.value.trim();
+            
+            if (name.length < 2) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // Add entrance animations
+        window.addEventListener('load', function() {
+            document.querySelector('.signup-card').style.animation = 'slideInUp 0.8s ease-out';
+        });
+
+        // Form validation on submit
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            const requiredFields = ['name', 'email', 'password', 'role'];
+            
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                }
+            });
+            
+            // Check zone field if zone leader is selected
+            const role = document.getElementById('role').value;
+            if (role === 'zone_leader') {
+                const zone = document.getElementById('zone');
+                if (!zone.value) {
+                    zone.classList.add('is-invalid');
+                    isValid = false;
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                // Reset button state if validation fails
+                const signupBtn = document.getElementById('signupBtn');
+                signupBtn.classList.remove('btn-loading');
+                signupBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Account';
+            }
+        });
     </script>
 </body>
 </html>
