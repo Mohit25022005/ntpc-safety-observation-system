@@ -13,6 +13,7 @@
         backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         padding: 0.75rem 0;
+        animation: slideDown 0.6s ease-out;
     }
 
     .navbar-brand {
@@ -52,14 +53,14 @@
     }
 
     .nav-link {
-        position: relative;
         font-weight: 500;
         padding: 0.5rem 1rem !important;
         margin: 0 0.25rem;
         border-radius: 8px;
         transition: all 0.3s ease;
-        overflow: hidden;
         color: rgba(255, 255, 255, 0.9) !important;
+        position: relative;
+        overflow: hidden;
     }
 
     .nav-link::before {
@@ -84,10 +85,26 @@
         color: #ffffff !important;
     }
 
-    .nav-link.active {
-        background: var(--ntpc-accent);
+    .logout-link {
+        background: linear-gradient(45deg, var(--ntpc-danger), #dc2626);
+        border-radius: 8px;
+        padding: 0.5rem 1rem !important;
+        margin-left: 0.5rem;
+        transition: all 0.3s ease;
         color: white !important;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+        font-weight: 500;
+    }
+
+    .logout-link:hover {
+        background: linear-gradient(45deg, #dc2626, #b91c1c);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        color: white !important;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: var(--ntpc-accent);
     }
 
     .navbar-toggler {
@@ -118,28 +135,6 @@
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    .logout-link {
-        background: linear-gradient(45deg, var(--ntpc-danger), #dc2626);
-        border-radius: 8px;
-        padding: 0.5rem 1rem !important;
-        margin-left: 0.5rem;
-        transition: all 0.3s ease;
-        color: white !important;
-        font-weight: 500;
-    }
-
-    .logout-link:hover {
-        background: linear-gradient(45deg, #dc2626, #b91c1c);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-        color: white !important;
-    }
-
-    .user-name {
-        font-weight: 600;
-        color: var(--ntpc-accent);
-    }
-
     @media (max-width: 991px) {
         .navbar-nav {
             background: rgba(30, 58, 138, 0.95);
@@ -148,7 +143,7 @@
             margin-top: 1rem;
             backdrop-filter: blur(10px);
         }
-        
+
         .logout-link {
             margin-left: 0;
             margin-top: 0.5rem;
@@ -156,7 +151,6 @@
         }
     }
 
-    /* Add subtle animation to navbar on load */
     @keyframes slideDown {
         from {
             transform: translateY(-100%);
@@ -168,16 +162,6 @@
         }
     }
 
-    .navbar-enhanced {
-        animation: slideDown 0.6s ease-out;
-    }
-
-    /* Enhance the container */
-    .navbar .container {
-        position: relative;
-    }
-
-    /* Add a subtle pattern overlay */
     .navbar-enhanced::before {
         content: '';
         position: absolute;
@@ -207,14 +191,6 @@
             <ul class="navbar-nav ms-auto">
                 <% if (user) { %>
                     <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                    </li>
-                    <% if (['normal', 'zone_leader', 'eic'].includes(user.role)) { %>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/">Record Observation</a>
-                        </li>
-                    <% } %>
-                    <li class="nav-item">
                         <a class="nav-link logout-link" href="#" onclick="confirmLogout()">
                             Logout (<span class="user-name"><%= user.name %></span>)
                         </a>
@@ -228,37 +204,21 @@
 <script>
     function confirmLogout() {
         if (confirm('Are you sure you want to logout?')) {
-            // Add loading state to logout button
             const logoutLink = document.querySelector('.logout-link');
             const originalText = logoutLink.innerHTML;
             logoutLink.innerHTML = 'Logging out...';
             logoutLink.style.pointerEvents = 'none';
-            
-            // Small delay for better UX
             setTimeout(() => {
                 window.location.href = '/auth/logout';
             }, 500);
         }
     }
 
-    // Add active state management
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentPath = window.location.pathname;
-        const navLinks = document.querySelectorAll('.nav-link:not(.logout-link)');
-        
-        navLinks.forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
-                link.classList.add('active');
-            }
-        });
-    });
-
-    // Add scroll effect for enhanced experience
-    let lastScrollTop = 0;
-    window.addEventListener('scroll', function() {
+    // Adjust navbar style on scroll
+    window.addEventListener('scroll', function () {
         let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const navbar = document.querySelector('.navbar-enhanced');
-        
+
         if (scrollTop > 100) {
             navbar.style.background = 'linear-gradient(135deg, rgba(30, 58, 138, 0.95) 0%, rgba(59, 130, 246, 0.95) 100%)';
             navbar.style.backdropFilter = 'blur(15px)';
@@ -266,7 +226,5 @@
             navbar.style.background = 'linear-gradient(135deg, var(--ntpc-primary) 0%, var(--ntpc-secondary) 100%)';
             navbar.style.backdropFilter = 'blur(10px)';
         }
-        
-        lastScrollTop = scrollTop;
     });
 </script>
