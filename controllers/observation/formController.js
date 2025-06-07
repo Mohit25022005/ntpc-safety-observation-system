@@ -1,7 +1,9 @@
 const User = require('../../models/User');
+const NearMiss = require('../../models/NearMiss');
 const { ZONES } = require('../../config/zones');
-const { eicList, departments } = require('../../config/constants');
+const { zones, eicList, departments } = require('../../config/constants');
 const { handleError } = require('./utils');
+const cloudinary = require('../../config/cloudinary');
 
 /**
  * Renders the observation submission form.
@@ -73,4 +75,122 @@ const getEICOptions = (req, res) => {
     res.json(eicList);
 };
 
-module.exports = { renderForm, getZoneLeaders, getDepartments, getEICOptions };
+/**
+ * Renders the near miss incident report form.
+ */
+const renderNearMissForm = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const successMessage = req.query.success || null;
+        const errorMessage = req.query.error || null;
+
+        if (!['normal', 'eic', 'zone_leader', 'admin'].includes(user.role)) {
+            return res.render('report-near-miss', {
+                user,
+                successMessage: null,
+                errorMessage: 'Unauthorized access to near miss reporting',
+                zones
+            });
+        }
+
+        res.render('report-near-miss', {
+            user,
+            successMessage,
+            errorMessage,
+            zones
+        });
+    } catch (err) {
+        console.error('Render near miss form error:', err.message || err);
+        handleError(err, res, '/dashboard', 'Render near miss form error:');
+    }
+};
+
+/**
+ * Submits a near miss incident report.
+ */
+const submitNearMiss = async (req, res, next) => {
+    try {
+        const user = req.user;
+        if (!['normal', 'eic', 'zone_leader', 'admin'].includes(user.role)) {
+            return res.redirect('/dashboard?error=Unauthorized to submit near miss');
+        }
+
+        const { incidentDate, incidentZone, incidentLocation, incidentDetails } = req.body;
+        let uploadedFileUrl = null;
+
+        if (req.file) {
+            const result = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        resource_type: 'auto',
+                        folder: 'ntpc_safety_near_misses',
+                        allowed_formats: ['pdf', 'jpeg', 'jpg', 'doc', 'docx'],
+                    },
+                    (error, result) => {
+                        if (error) return reject(error);
+                        resolve(result);
+                    }
+                );
+                uploadStream.end(req.file.buffer);
+            });
+            uploadedFileUrl = result.secure_url;
+        }
+
+        const nearMiss = new NearMiss({
+            userId: user.id,
+            incidentDate: new Date(incidentDate),
+            incidentZone,
+            incidentLocation,
+            incidentDetails,
+            uploadedFileUrl
+        });
+
+        await nearMiss.save();
+        res.redirect('/dashboard?success=Near miss incident reported successfully');
+    } catch (err) {
+        console.error('Submit near miss error:', err.message || err);
+        handleError(err, res, '/report-near-miss', 'Submit near miss error:');
+    }
+};
+
+/**
+ * Views details of a near miss incident.
+ */
+const viewNearMissDetails = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const nearMiss = await NearMiss.findById(req.params.id).populate('userId', 'name');
+
+        if (!nearMiss) {
+            return res.redirect('/dashboard?error=Near miss incident not found');
+        }
+
+        // Role-based access control
+        let isAuthorized = false;
+        if (user.role === 'admin') {
+            isAuthorized = true;
+        } else if (user.role === 'normal' && nearMiss.userId._id.toString() === user.id) {
+            isAuthorized = true;
+        } else if (user.role === 'zone_leader' && nearMiss.incidentZone === user.zone) {
+            isAuthorized = true;
+        } else if (user.role === 'eic') {
+            isAuthorized = true; // EICs can view all near misses
+        }
+
+        if (!isAuthorized) {
+            return res.redirect('/dashboard?error=Unauthorized to view this near miss');
+        }
+
+        res.render('near-miss-details', {
+            user,
+            nearMiss,
+            successMessage: req.query.success || null,
+            errorMessage: req.query.error || null
+        });
+    } catch (err) {
+        console.error('View near miss details error:', err.message || err);
+        handleError(err, res, '/dashboard', 'View near miss details error:');
+    }
+};
+
+module.exports = { renderForm, getZoneLeaders, getDepartments, getEICOptions, renderNearMissForm, submitNearMiss, viewNearMissDetails };

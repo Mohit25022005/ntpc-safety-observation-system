@@ -1,11 +1,15 @@
 const Observation = require('../../models/Observation');
 const User = require('../../models/User');
+const NearMiss = require('../../models/NearMiss');
 const cloudinary = require('../../config/cloudinary');
 const { zones, eicList, departments } = require('../../config/constants');
 const { handleError, isAuthorizedUser } = require('./utils');
 
+// Store SSE clients
+const clients = {};
+
 /**
- * Submits a new safety observation.
+ * Submits a new safety observation and notifies clients of count update.
  */
 const submitObservation = async (req, res, next) => {
     try {
@@ -44,9 +48,99 @@ const submitObservation = async (req, res, next) => {
         });
 
         await observation.save();
+
+        // Notify clients of updated observation count
+        await broadcastObservationCount(req.user.id);
+
         res.redirect('/dashboard?success=Observation submitted successfully');
     } catch (err) {
         handleError(err, res, '/', 'Submit observation error:');
+    }
+};
+
+/**
+ * Broadcasts updated observation count to all connected clients.
+ */
+const broadcastObservationCount = async (triggeringUserId) => {
+    try {
+        // Fetch all users to compute role-specific counts
+        const users = await User.find();
+        const totalObservations = await Observation.countDocuments();
+
+        for (const clientId in clients) {
+            const client = clients[clientId];
+            const user = users.find(u => u.id === client.userId);
+            if (!user) continue;
+
+            let count;
+            switch (user.role) {
+                case 'normal':
+                    count = await Observation.countDocuments({ userId: user.id });
+                    break;
+                case 'zone_leader':
+                case 'eic':
+                case 'vendor':
+                    count = totalObservations;
+                    break;
+                case 'admin':
+                    count = totalObservations;
+                    break;
+                default:
+                    count = 0;
+            }
+
+            // Send updated count to client
+            client.res.write(`data: ${JSON.stringify({ count })}\n\n`);
+        }
+    } catch (err) {
+        console.error('Broadcast observation count error:', err.message || err);
+    }
+};
+
+/**
+ * Handles SSE connection for real-time observation count updates.
+ */
+const handleObservationCountSSE = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+
+        // Set SSE headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+
+        // Initialize client
+        const clientId = Date.now().toString();
+        clients[clientId] = { res, userId };
+
+        // Send initial count
+        const user = await User.findById(userId);
+        let initialCount;
+        switch (user.role) {
+            case 'normal':
+                initialCount = await Observation.countDocuments({ userId });
+                break;
+            case 'zone_leader':
+            case 'eic':
+            case 'vendor':
+                initialCount = await Observation.countDocuments();
+                break;
+            case 'admin':
+                initialCount = await Observation.countDocuments();
+                break;
+            default:
+                initialCount = 0;
+        }
+        res.write(`data: ${JSON.stringify({ count: initialCount })}\n\n`);
+
+        // Clean up on client disconnect
+        req.on('close', () => {
+            delete clients[clientId];
+        });
+    } catch (err) {
+        console.error('SSE connection error:', err.message || err);
+        res.status(500).end();
     }
 };
 
@@ -73,42 +167,53 @@ const renderDashboard = async (req, res, next) => {
 
         // Fetch role-specific observations
         let observations = [];
-        let stats = { totalObservations: 0 };
+        let nearMisses = [];
+        let stats = { totalObservations: 0, nearMisses: 0 };
 
         switch (role) {
             case 'normal':
                 observations = await Observation.find({ userId: req.user.id })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
+                nearMisses = await NearMiss.find({ userId: req.user.id });
                 stats.totalObservations = observations.length;
+                stats.nearMisses = nearMisses.length;
                 break;
 
             case 'zone_leader':
                 observations = await Observation.find({ zoneLeaders: { $in: [user.name] } })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
+                nearMisses = await NearMiss.find({ incidentZone: user.zone });
                 stats.totalObservations = await Observation.countDocuments();
+                stats.nearMisses = nearMisses.length;
                 break;
 
             case 'eic':
                 observations = await Observation.find({ eic: user.name })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
+                nearMisses = await NearMiss.find({ incidentZone: { $in: zones } });
                 stats.totalObservations = await Observation.countDocuments();
+                stats.nearMisses = nearMisses.length;
                 break;
 
             case 'vendor':
                 observations = await Observation.find({ vendorId: req.user.id })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
+                nearMisses = [];
                 stats.totalObservations = await Observation.countDocuments();
+                stats.nearMisses = 0;
                 break;
 
             case 'admin':
                 observations = await Observation.find()
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
+                nearMisses = await NearMiss.find();
                 stats.totalObservations = await Observation.countDocuments();
+                stats.nearMisses = await NearMiss.countDocuments();
                 break;
 
             default:
@@ -122,6 +227,7 @@ const renderDashboard = async (req, res, next) => {
             zones: zoneData,
             maxObservationCount,
             observations,
+            nearMisses,
             stats
         });
     } catch (err) {
@@ -220,6 +326,9 @@ const updateObservation = async (req, res, next) => {
             uploadedFileUrl,
         });
 
+        // Notify clients of updated observation count
+        await broadcastObservationCount(req.user.id);
+
         res.redirect('/dashboard?success=Observation updated successfully');
     } catch (err) {
         console.error('Update observation error:', err.message || err);
@@ -243,6 +352,10 @@ const deleteObservation = async (req, res, next) => {
         }
 
         await Observation.findByIdAndDelete(req.params.id);
+
+        // Notify clients of updated observation count
+        await broadcastObservationCount(req.user.id);
+
         res.redirect('/dashboard?success=Observation deleted successfully');
     } catch (err) {
         console.error('Delete observation error:', err.message || err);
@@ -250,4 +363,4 @@ const deleteObservation = async (req, res, next) => {
     }
 };
 
-module.exports = { submitObservation, renderDashboard, editObservation, updateObservation, deleteObservation };
+module.exports = { submitObservation, renderDashboard, editObservation, updateObservation, deleteObservation, handleObservationCountSSE, broadcastObservationCount };

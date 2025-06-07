@@ -5,6 +5,12 @@ const {
     renderForm,
     getZoneLeaders,
     getDepartments,
+    getEICOptions,
+    renderNearMissForm,
+    submitNearMiss,
+    viewNearMissDetails
+} = require('../controllers/observation/formController');
+const {
     submitObservation,
     renderDashboard,
     editObservation,
@@ -23,6 +29,7 @@ const {
     resolveObservation,
     zoneLeaderCloseObservation,
     zoneLeaderResendToVendor,
+    handleObservationCountSSE
 } = require('../controllers/observationController');
 
 const router = express.Router();
@@ -32,6 +39,15 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', authMiddleware, renderForm);
 router.get('/zone-leaders', authMiddleware, getZoneLeaders);
 router.get('/departments', authMiddleware, getDepartments);
+router.get('/eic-options', authMiddleware, getEICOptions);
+
+// Near miss form
+router.get('/report-near-miss', authMiddleware, renderNearMissForm);
+router.post('/report-near-miss/submit', authMiddleware, upload.single('incidentFile'), submitNearMiss);
+router.get('/near-miss/:id', authMiddleware, viewNearMissDetails);
+
+// SSE for observation count
+router.get('/observation-count', authMiddleware, handleObservationCountSSE);
 
 // Observation submission
 router.post('/submit', authMiddleware, upload.single('file'), submitObservation);
@@ -63,7 +79,6 @@ router.post('/zone-leader/resend-to-vendor', authMiddleware, zoneLeaderResendToV
 
 // Placeholder routes for sidebar links
 router.get('/record-suggestion', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Record Suggestion - Under Construction' }));
-router.get('/report-near-miss', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Report Near Miss - Under Construction' }));
 router.get('/submit-poster', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Submit Poster/Slogan - Under Construction' }));
 router.get('/safety-policy', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'NTPC Safety Policy Compliance - Under Construction' }));
 router.get('/safety-permit', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Safety Permit - Under Construction' }));

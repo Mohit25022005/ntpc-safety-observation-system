@@ -48,7 +48,7 @@
 
   <div class="container-fluid my-5">
     <div class="row">
-      <!-- Left Sidebar (Original Collapsible Sidebar) -->
+      <!-- Left Sidebar (Collapsible Sidebar) -->
       <div class="col-md-3">
         <div id="sidebar" class="sidebar bg-dark text-white min-h-screen p-4" style="width: 250px;">
           <div class="d-flex align-items-center justify-content-between mb-4">
@@ -95,7 +95,7 @@
               <div class="card text-center">
                 <div class="card-body">
                   <h5 class="card-title text-danger">Total Safety Observations</h5>
-                  <p class="card-text display-4 text-danger"><%= stats.totalObservations %></p>
+                  <p class="card-text display-4 text-danger" id="total-observations"><%= stats.totalObservations %></p>
                 </div>
               </div>
             </div>
@@ -111,7 +111,7 @@
               <div class="card text-center">
                 <div class="card-body">
                   <h5 class="card-title text-warning">Reported Near Misses</h5>
-                  <p class="card-text display-4 text-warning">0</p>
+                  <p class="card-text display-4 text-warning"><%= stats.nearMisses %></p>
                 </div>
               </div>
             </div>
@@ -138,7 +138,7 @@
           </div>
 
           <!-- Role-Specific Observations -->
-          <div class="card">
+          <div class="card mb-4">
             <div class="card-body">
               <h2 class="card-title mb-4">Your Observations</h2>
               <% if (observations.length > 0) { %>
@@ -198,6 +198,41 @@
               <% } %>
             </div>
           </div>
+
+          <!-- Near Miss Incidents -->
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-title mb-4">Near Miss Incidents</h2>
+              <% if (nearMisses.length > 0) { %>
+                <div class="table-responsive">
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Zone</th>
+                        <th>Details</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% nearMisses.forEach(nearMiss => { %>
+                        <tr>
+                          <td><%= nearMiss.incidentZone %></td>
+                          <td><%= nearMiss.incidentDetails.length > 50 ? nearMiss.incidentDetails.substring(0, 50) + '...' : nearMiss.incidentDetails %></td>
+                          <td><%= nearMiss.incidentDate.toLocaleString() %></td>
+                          <td>
+                            <a href="/near-miss/<%= nearMiss._id %>" class="btn btn-sm btn-primary">View</a>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %>
+                <p class="text-muted">No near miss incidents found.</p>
+              <% } %>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -222,6 +257,18 @@
         window.location.href = '/auth/logout';
       }
     }
+
+    // Real-time observation count update via SSE
+    const totalObservations = document.getElementById('total-observations');
+    const source = new EventSource('/observation-count');
+    source.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      totalObservations.textContent = data.count;
+    };
+    source.onerror = function() {
+      console.error('SSE connection error. Retrying...');
+      // EventSource automatically retries
+    };
   </script>
 </body>
 </html>
