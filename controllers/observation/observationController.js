@@ -1,8 +1,3 @@
-/**
- * Observation Controller
- * Handles core observation CRUD operations (submit, view, edit, update, delete).
- */
-
 const Observation = require('../../models/Observation');
 const User = require('../../models/User');
 const cloudinary = require('../../config/cloudinary');
@@ -11,9 +6,6 @@ const { handleError, isAuthorizedUser } = require('./utils');
 
 /**
  * Submits a new safety observation.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const submitObservation = async (req, res, next) => {
     try {
@@ -59,10 +51,7 @@ const submitObservation = async (req, res, next) => {
 };
 
 /**
- * Renders the dashboard based on the user's role.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
+ * Renders the dashboard with dynamic data.
  */
 const renderDashboard = async (req, res, next) => {
     try {
@@ -71,76 +60,70 @@ const renderDashboard = async (req, res, next) => {
         const successMessage = req.query.success || null;
         const errorMessage = req.query.error || null;
 
-        let observations;
-        let closedObservations = [];
-        let viewData = { user, successMessage, errorMessage };
+        // Fetch zone-wise observation counts
+        const zoneCounts = await Observation.aggregate([
+            { $group: { _id: '$zone', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+        ]);
+        const maxObservationCount = zoneCounts.length > 0 ? Math.max(...zoneCounts.map(z => z.count)) : 1;
+        const zoneData = zones.map(zoneName => {
+            const zone = zoneCounts.find(z => z._id === zoneName) || { _id: zoneName, count: 0 };
+            return { name: zone._id, count: zone.count };
+        });
+
+        // Fetch role-specific observations
+        let observations = [];
+        let stats = { totalObservations: 0 };
 
         switch (role) {
             case 'normal':
                 observations = await Observation.find({ userId: req.user.id })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
-                res.render('dashboards/normal', { ...viewData, observations });
+                stats.totalObservations = observations.length;
                 break;
 
             case 'zone_leader':
                 observations = await Observation.find({ zoneLeaders: { $in: [user.name] } })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
-                closedObservations = await Observation.find({ closedBy: user.name, status: 'closed' })
-                    .populate('comments.userId')
-                    .populate('submissions.vendorId');
-                const vendorsZL = await User.find({ role: 'vendor' });
-                res.render('dashboards/zone_leader', {
-                    ...viewData,
-                    observations,
-                    closedObservations,
-                    vendors: vendorsZL,
-                });
+                stats.totalObservations = await Observation.countDocuments();
                 break;
 
             case 'eic':
                 observations = await Observation.find({ eic: user.name })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
-                closedObservations = await Observation.find({ closedBy: user.name, status: 'closed' })
-                    .populate('comments.userId')
-                    .populate('submissions.vendorId');
-                const vendorsEIC = await User.find({ role: 'vendor' });
-                res.render('dashboards/eic', {
-                    ...viewData,
-                    observations,
-                    closedObservations,
-                    vendors: vendorsEIC,
-                });
+                stats.totalObservations = await Observation.countDocuments();
                 break;
 
             case 'vendor':
                 observations = await Observation.find({ vendorId: req.user.id })
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
-                res.render('dashboards/vendor', { ...viewData, observations });
+                stats.totalObservations = await Observation.countDocuments();
                 break;
 
             case 'admin':
                 observations = await Observation.find()
                     .populate('comments.userId')
                     .populate('submissions.vendorId');
-                closedObservations = await Observation.find({ status: 'closed' })
-                    .populate('comments.userId')
-                    .populate('submissions.vendorId');
-                const vendorsAdmin = await User.find({ role: 'vendor' });
-                res.render('dashboards/admin', {
-                    ...viewData,
-                    observations,
-                    closedObservations,
-                    vendors: vendorsAdmin,
-                });
+                stats.totalObservations = await Observation.countDocuments();
                 break;
 
             default:
-                res.status(403).json({ error: 'Invalid role' });
+                return res.status(403).json({ error: 'Invalid role' });
         }
+
+        res.render('dashboards/dashboard', {
+            user,
+            successMessage,
+            errorMessage,
+            zones: zoneData,
+            maxObservationCount,
+            observations,
+            stats
+        });
     } catch (err) {
         console.error('Render dashboard error:', err.message || err);
         next(err);
@@ -149,9 +132,6 @@ const renderDashboard = async (req, res, next) => {
 
 /**
  * Renders the edit observation form.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const editObservation = async (req, res, next) => {
     try {
@@ -188,9 +168,6 @@ const editObservation = async (req, res, next) => {
 
 /**
  * Updates an existing observation.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const updateObservation = async (req, res, next) => {
     try {
@@ -252,9 +229,6 @@ const updateObservation = async (req, res, next) => {
 
 /**
  * Deletes an observation.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const deleteObservation = async (req, res, next) => {
     try {

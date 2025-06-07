@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        unique: true, // Ensure unique names for EICs
+        unique: true,
         trim: true
     },
     email: {
@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     zone: {
         type: String,
-        enum: [...ZONES, null,""],
+        enum: [...ZONES, null, ""],
         required: function () {
             return this.role === 'zone_leader';
         },

@@ -61,4 +61,15 @@ router.post('/review-and-forward-to-zone-leader', authMiddleware, reviewAndForwa
 router.post('/zone-leader/close', authMiddleware, zoneLeaderCloseObservation);
 router.post('/zone-leader/resend-to-vendor', authMiddleware, zoneLeaderResendToVendor);
 
+// Placeholder routes for sidebar links
+router.get('/record-suggestion', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Record Suggestion - Under Construction' }));
+router.get('/report-near-miss', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Report Near Miss - Under Construction' }));
+router.get('/submit-poster', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Submit Poster/Slogan - Under Construction' }));
+router.get('/safety-policy', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'NTPC Safety Policy Compliance - Under Construction' }));
+router.get('/safety-permit', authMiddleware, (req, res) => res.render('placeholder', { user: req.user, message: 'Safety Permit - Under Construction' }));
+router.get('/safety-admin', authMiddleware, (req, res) => {
+    if (req.user.role !== 'admin') return res.redirect('/dashboard?error=Unauthorized');
+    res.render('placeholder', { user: req.user, message: 'Safety Admin - Under Construction' });
+});
+
 module.exports = router;

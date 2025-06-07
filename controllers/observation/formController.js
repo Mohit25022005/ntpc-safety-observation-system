@@ -1,18 +1,10 @@
-/**
- * Form Controller
- * Handles form rendering and dropdown data fetching for observations.
- */
-
 const User = require('../../models/User');
-const { zones, eicList, departments } = require('../../config/constants');
 const { ZONES } = require('../../config/zones');
+const { eicList, departments } = require('../../config/constants');
 const { handleError } = require('./utils');
 
 /**
  * Renders the observation submission form.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const renderForm = async (req, res, next) => {
     try {
@@ -36,9 +28,6 @@ const renderForm = async (req, res, next) => {
 
 /**
  * Fetches Zone Leaders for a given zone.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const getZoneLeaders = async (req, res, next) => {
     try {
@@ -61,9 +50,6 @@ const getZoneLeaders = async (req, res, next) => {
 
 /**
  * Fetches the list of departments from constants.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  */
 const getDepartments = async (req, res, next) => {
     try {
@@ -82,8 +68,6 @@ const getDepartments = async (req, res, next) => {
 
 /**
  * Fetches the list of EICs from constants.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
  */
 const getEICOptions = (req, res) => {
     res.json(eicList);
