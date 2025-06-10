@@ -13,73 +13,156 @@ const { handleError } = require('./utils');
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-const renderVendorSubmissionForm = async (req, res, next) => {
+// Render the vendor submission form
+async function renderVendorSubmissionForm(req, res) {
     try {
-        const observation = await Observation.findById(req.params.id);
-        if (!observation) {
-            return res.redirect('/dashboard?error=Observation not found');
+        const observationId = req.params.id;
+        if (!observationId.match(/^[0-9a-fA-F]{24}$/)) {
+            console.error(`Invalid observation ID format: ${observationId}`);
+            return res.status(400).render('vendor_submission', {
+                observation: null,
+                user: req.user,
+                errorMessage: 'Invalid observation ID format.'
+            });
         }
-        if (observation.vendorId.toString() !== req.user.id) {
-            return res.redirect('/dashboard?error=Unauthorized');
-        }
-        res.render('vendor_submission', { observation, errorMessage: null, user: req.user });
-    } catch (err) {
-        console.error('Render vendor submission form error:', err.message || err);
-        next(err);
-    }
-};
 
-/**
- * Submits vendor work for an observation.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- */
-const submitVendorWork = async (req, res, next) => {
-    try {
-        const { observationId, description } = req.body;
         const observation = await Observation.findById(observationId);
         if (!observation) {
-            return res.redirect('/dashboard?error=Observation not found');
-        }
-        if (observation.vendorId.toString() !== req.user.id) {
-            return res.redirect('/dashboard?error=Unauthorized');
-        }
-
-        let fileUrl = '';
-        if (req.file) {
-            const result = await new Promise((resolve, reject) => {
-                const uploadStream = cloudinary.uploader.upload_stream(
-                    {
-                        resource_type: 'auto',
-                        folder: 'ntpc_safety_submissions',
-                        allowed_formats: ['pdf', 'jpeg', 'jpg', 'doc', 'docx'],
-                    },
-                    (error, result) => {
-                        if (error) return reject(error);
-                        resolve(result);
-                    }
-                );
-                uploadStream.end(req.file.buffer);
+            console.error(`Observation not found for ID: ${observationId}`);
+            return res.status(404).render('vendor_submission', {
+                observation: null,
+                user: req.user,
+                errorMessage: `Observation not found.`
             });
-            fileUrl = result.secure_url;
         }
 
-        await Observation.findByIdAndUpdate(observationId, {
-            $push: {
-                submissions: {
-                    vendorId: req.user.id,
-                    description,
-                    fileUrl,
-                },
-            },
+        if (req.user.role !== 'vendor' || !observation.vendorId || observation.vendorId.toString() !== req.user.id) {
+            console.error(`Unauthorized vendor attempt: user ${req.user.id}, observation ${observationId}`);
+            return res.status(403).render('vendor_submission', {
+                observation,
+                user: req.user,
+                errorMessage: 'You are not authorized to submit work.'
+            });
+        }
+
+        if (observation.status !== 'forwarded') {
+            console.error(`Invalid status: ${observation.status}, observation ${observationId}`);
+            return res.status(403).render('vendor_submission', {
+                observation,
+                user: req.user,
+                errorMessage: 'Observation not available for submissions.'
+            });
+        }
+
+        res.render('vendor_submission', { observation, user: req.user, errorMessage: null });
+    } catch (error) {
+        console.error(`Render vendor submission error for ID ${req.params.id}:`, error.message);
+        res.status(500).render('vendor_submission', {
+            observation: null,
+            user: req.user,
+            errorMessage: 'Server error. Please try again.'
         });
-
-        res.redirect('/dashboard?success=Work submitted successfully');
-    } catch (err) {
-        console.error('Submit vendor work error:', err.message || err);
-        next(err);
     }
-};
+}
 
+async function submitVendorWork(req, res) {
+    try {
+        const { description } = req.body;
+        const observationId = req.params.id;
+
+        // Log incoming request
+        console.log(`Submitting work for observation ${observationId} by user ${req.user?.id}`);
+
+        // Validate observation ID
+        if (!observationId.match(/^[0-9a-fA-F]{24}$/)) {
+            console.error(`Invalid observation ID format: ${observationId}`);
+            return res.status(400).render('vendor_submission', {
+                observation: null,
+                user: req.user,
+                errorMessage: 'Invalid observation ID format.'
+            });
+        }
+
+        // Find observation
+        const observation = await Observation.findById(observationId);
+        if (!observation) {
+            console.error(`Observation not found for ID: ${observationId}`);
+            return res.status(404).render('vendor_submission', {
+                observation: null,
+                user: req.user,
+                errorMessage: `Observation not found.`
+            });
+        }
+
+        // Validate vendor authorization
+        if (req.user.role !== 'vendor' || !observation.vendorId || observation.vendorId.toString() !== req.user.id) {
+            console.error(`Unauthorized vendor attempt: user ${req.user.id}, observation ${observationId}`);
+            return res.status(403).render('vendor_submission', {
+                observation,
+                user: req.user,
+                errorMessage: 'You are not authorized to submit work.'
+            });
+        }
+
+        // Check status
+        if (observation.status !== 'forwarded') {
+            console.error(`Invalid status: ${observation.status}, observation ${observationId}`);
+            return res.status(403).render('vendor_submission', {
+                observation,
+                user: req.user,
+                errorMessage: 'Observation not available for submissions.'
+            });
+        }
+
+        // Handle file upload
+        let fileUrl = null;
+        if (req.file) {
+            try {
+                const result = await new Promise((resolve, reject) => {
+                    const uploadStream = cloudinary.uploader.upload_stream(
+                        {
+                            resource_type: 'auto',
+                            folder: 'ntpc_safety_submissions',
+                            allowed_formats: ['pdf', 'jpeg', 'jpg', 'doc', 'docx'],
+                        },
+                        (error, result) => {
+                            if (error) return reject(error);
+                            resolve(result);
+                        }
+                    );
+                    uploadStream.end(req.file.buffer);
+                });
+                fileUrl = result.secure_url;
+                console.log(`File uploaded to Cloudinary: ${fileUrl}`);
+            } catch (uploadError) {
+                console.error(`File upload error for observation ${observationId}:`, uploadError.message);
+                return res.status(500).render('vendor_submission', {
+                    observation,
+                    user: req.user,
+                    errorMessage: 'Failed to upload file. Please try again or submit without a file.'
+                });
+            }
+        }
+
+        // Add submission
+        observation.submissions.push({
+            vendorId: req.user.id,
+            description: description || 'No description provided',
+            fileUrl,
+            createdAt: new Date()
+        });
+        observation.status = 'under_review';
+        await observation.save();
+
+        console.log(`Submission added for observation ${observationId} by vendor ${req.user.id}`);
+        res.redirect(`/issue/${observationId}?success=Work submitted successfully`);
+    } catch (error) {
+        console.error(`Submit vendor work error for ID ${req.params.id}:`, error.message, error.stack);
+        res.status(500).render('vendor_submission', {
+            observation: await Observation.findById(req.params.id).catch(() => null),
+            user: req.user,
+            errorMessage: 'Failed to submit work. Please try again.'
+        });
+    }
+}
 module.exports = { renderVendorSubmissionForm, submitVendorWork };

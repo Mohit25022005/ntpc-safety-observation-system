@@ -403,4 +403,76 @@ const forwardToVendor = async (req, res) => {
     }
 };
 
-module.exports = { renderForwardForm,forwardToVendor,submitObservation, renderDashboard, editObservation, updateObservation, deleteObservation, handleObservationCountSSE, broadcastObservationCount };
+// View issue details, including vendor submissions
+const viewIssueDetails = async (req, res) => {
+    try {
+        const observation = await Observation.findById(req.params.id)
+            .populate('submissions.vendorId', 'name')
+            .populate('vendorId', 'name');
+        if (!observation) {
+            return res.status(404).render('error', { message: 'Observation not found' });
+        }
+
+        // Determine if the user can view submissions
+        let canViewSubmissions = false;
+        if (req.user.role === 'vendor' && observation.vendorId && observation.vendorId._id.toString() === req.user._id.toString()) {
+            canViewSubmissions = true;
+        } else if (req.user.role === 'eic' && observation.eic === req.user.name) {
+            canViewSubmissions = true;
+        } else if (req.user.role === 'zone_leader' && observation.zoneLeaders.includes(req.user.name)) {
+            canViewSubmissions = true;
+        }
+
+        if (!canViewSubmissions) {
+            return res.render('issue/partials', {
+                observation,
+                user: req.user,
+                vendor: observation.vendorId,
+                canViewSubmissions: false,
+                error: 'You are not authorized to view this observation or its submissions.'
+            });
+        }
+
+        res.render('issue/partials', {
+            observation,
+            user: req.user,
+            vendor: observation.vendorId,
+            canViewSubmissions: true
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: 'Server error' });
+    }
+};
+// Close observation
+const closeObservation = async (req, res) => {
+    try {
+        const { observationId } = req.body;
+        const observation = await Observation.findById(observationId);
+        if (!observation) {
+            return res.status(404).json({ error: 'Observation not found' });
+        }
+
+        // Check if user is authorized to close
+        const isEIC = req.user.role === 'eic' && observation.eic === req.user.name && observation.severity === 'small' && observation.submissions.length > 0 && ['forwarded', 'under_review'].includes(observation.status);
+        const isZoneLeader = req.user.role === 'zone_leader' && observation.zoneLeaders.includes(req.user.name) && observation.submissions.length > 0 && ['forwarded', 'under_review'].includes(observation.status);
+
+        if (!isEIC && !isZoneLeader) {
+            return res.status(403).json({ error: 'Unauthorized to close this observation' });
+        }
+
+        observation.status = 'closed';
+        observation.closedBy = req.user.name;
+        observation.closedAt = new Date();
+        await observation.save();
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+
+
+
+module.exports = { viewIssueDetails,closeObservation,renderForwardForm,forwardToVendor,submitObservation, renderDashboard, editObservation, updateObservation, deleteObservation, handleObservationCountSSE, broadcastObservationCount };

@@ -30,7 +30,7 @@ const {
     zoneLeaderCloseObservation,
     zoneLeaderResendToVendor,
     handleObservationCountSSE,
-    renderForwardForm // New controller
+    renderForwardForm
 } = require('../controllers/observationController');
 
 const router = express.Router();
@@ -60,7 +60,7 @@ router.post('/observation/update/:id', authMiddleware, upload.single('file'), up
 router.post('/observation/delete/:id', authMiddleware, deleteObservation);
 
 // Action routes
-router.get('/observation/forward/:id', authMiddleware, authorizeRole(['zone_leader', 'eic']), renderForwardForm); // New route
+router.get('/observation/forward/:id', authMiddleware, authorizeRole(['zone_leader', 'eic']), renderForwardForm);
 router.post('/forward', authMiddleware, authorizeRole(['zone_leader', 'eic']), forwardToVendor);
 router.post('/close', authMiddleware, closeObservation);
 router.post('/comment', authMiddleware, addComment);

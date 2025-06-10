@@ -396,6 +396,18 @@
                         <% if (user.role === 'zone_leader' && obs.zoneLeaders.includes(user.name) && ['pending', 'rejected'].includes(obs.status)) { %>
                           <a href="/observation/forward/<%= obs._id %>" class="btn btn-sm btn-info">Forward</a>
                         <% } %>
+                        <% if (user.role === 'eic' && obs.eic === user.name && obs.severity === 'small' && obs.submissions.length > 0 && ['forwarded', 'under_review'].includes(obs.status)) { %>
+                          <form action="/close" method="POST" class="d-inline">
+                            <input type="hidden" name="observationId" value="<%= obs._id %>">
+                            <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Are you sure you want to close this observation?')">Close</button>
+                          </form>
+                        <% } %>
+                        <% if (user.role === 'zone_leader' && obs.zoneLeaders.includes(user.name) && obs.submissions.length > 0 && ['forwarded', 'under_review'].includes(obs.status)) { %>
+                          <form action="/close" method="POST" class="d-inline">
+                            <input type="hidden" name="observationId" value="<%= obs._id %>">
+                            <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Are you sure you want to close this observation?')">Close</button>
+                          </form>
+                        <% } %>
                         <% if (user.role === 'vendor' && obs.status === 'forwarded' && obs.vendorId && obs.vendorId.toString() === user._id.toString()) { %>
                           <a href="/vendor/submit/<%= obs._id %>" class="btn btn-sm btn-info">Submit Work</a>
                         <% } %>

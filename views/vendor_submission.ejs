@@ -10,6 +10,9 @@
         .card { border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .btn-primary { background-color: #007bff; border: none; }
         .btn-primary:hover { background-color: #0056b3; }
+        .container { max-width: 600px; margin-top: 2.5rem; }
+        .form-label { font-weight: bold; }
+        .alert { border-radius: 5px; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -17,24 +20,29 @@
     <div class="container my-5">
         <div class="card p-4">
             <h1 class="card-title text-center mb-4">Submit Work for Observation</h1>
-            <p class="mb-4"><strong>Observation:</strong> <%= observation.description %></p>
             <% if (errorMessage) { %>
                 <div class="alert alert-danger"><%= errorMessage %></div>
             <% } %>
-            <form action="/vendor/submit/<%= observation._id %>" method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="description" class="form-label">Work Description</label>
-                    <textarea id="description" name="description" class="form-control" required placeholder="Describe the work completed"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="file" class="form-label">Upload File (optional)</label>
-                    <input type="file" id="file" name="file" class="form-control" accept=".pdf,.jpeg,.jpg,.doc,.docx">
-                </div>
-                <div class="d-flex">
-                    <button type="submit" class="btn btn-primary flex-grow-1">Submit Work</button>
-                    <a href="/dashboard" class="btn btn-outline-secondary ms-2">Cancel</a>
-                </div>
-            </form>
+            <% if (observation) { %>
+                <p class="mb-2"><strong>Observation:</strong> <%= observation.description.length > 100 ? observation.description.substring(0, 100) + '...' : observation.description %></p>
+                <p class="mb-4"><strong>Zone:</strong> <%= observation.zone %></p>
+                <form action="/vendor/submit/<%= observation._id %>" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Work Description</label>
+                        <textarea id="description" name="description" class="form-control" rows="4" required placeholder="Describe the work completed"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Upload File (PDF, JPEG, JPG, DOC, DOCX)</label>
+                        <input type="file" id="file" name="file" class="form-control" accept=".pdf,.jpeg,.jpg,.doc,.docx">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Submit Work</button>
+                        <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            <% } else { %>
+                <p class="text-muted text-center">No observation available. Return to <a href="/dashboard">Dashboard</a>.</p>
+            <% } %>
         </div>
     </div>
     <%- include('partials/footer') %>
