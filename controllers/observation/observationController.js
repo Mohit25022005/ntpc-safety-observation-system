@@ -363,4 +363,44 @@ const deleteObservation = async (req, res, next) => {
     }
 };
 
-module.exports = { submitObservation, renderDashboard, editObservation, updateObservation, deleteObservation, handleObservationCountSSE, broadcastObservationCount };
+// Render the form to forward an observation to a vendor
+const renderForwardForm = async (req, res) => {
+    try {
+        const observation = await Observation.findById(req.params.id);
+        if (!observation) {
+            return res.status(404).render('error', { message: 'Observation not found' });
+        }
+        // Fetch users with role 'vendor'
+        const vendors = await User.find({ role: 'vendor' }).select('name email');
+        res.render('forwardObservation', { observation, vendors, user: req.user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: 'Server error' });
+    }
+};
+
+// Forward observation to a vendor
+const forwardToVendor = async (req, res) => {
+    try {
+        const { observationId, vendorId } = req.body;
+        const observation = await Observation.findById(observationId);
+        if (!observation) {
+            return res.status(404).json({ error: 'Observation not found' });
+        }
+        const vendor = await User.findById(vendorId);
+        if (!vendor || vendor.role !== 'vendor') {
+            return res.status(400).json({ error: 'Invalid vendor selected' });
+        }
+        observation.vendorId = vendorId;
+        observation.forwardedBy = req.user.name;
+        observation.forwardedAt = new Date();
+        observation.status = 'forwarded';
+        await observation.save();
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+module.exports = { renderForwardForm,forwardToVendor,submitObservation, renderDashboard, editObservation, updateObservation, deleteObservation, handleObservationCountSSE, broadcastObservationCount };

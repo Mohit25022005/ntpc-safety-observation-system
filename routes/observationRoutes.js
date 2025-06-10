@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, authorizeRole } = require('../middleware/auth');
 const {
     renderForm,
     getZoneLeaders,
@@ -29,7 +29,8 @@ const {
     resolveObservation,
     zoneLeaderCloseObservation,
     zoneLeaderResendToVendor,
-    handleObservationCountSSE
+    handleObservationCountSSE,
+    renderForwardForm // New controller
 } = require('../controllers/observationController');
 
 const router = express.Router();
@@ -59,7 +60,8 @@ router.post('/observation/update/:id', authMiddleware, upload.single('file'), up
 router.post('/observation/delete/:id', authMiddleware, deleteObservation);
 
 // Action routes
-router.post('/forward', authMiddleware, forwardToVendor);
+router.get('/observation/forward/:id', authMiddleware, authorizeRole(['zone_leader', 'eic']), renderForwardForm); // New route
+router.post('/forward', authMiddleware, authorizeRole(['zone_leader', 'eic']), forwardToVendor);
 router.post('/close', authMiddleware, closeObservation);
 router.post('/comment', authMiddleware, addComment);
 router.post('/update-date', authMiddleware, updateCompletionDate);
