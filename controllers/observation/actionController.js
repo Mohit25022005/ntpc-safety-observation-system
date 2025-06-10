@@ -1,8 +1,3 @@
-/**
- * Action Controller
- * Handles observation actions such as forwarding, closing, commenting, and approving.
- */
-
 const Observation = require('../../models/Observation');
 const User = require('../../models/User');
 const { handleError, isAuthorizedUser } = require('./utils');
@@ -40,7 +35,7 @@ const forwardToVendor = async (req, res, next) => {
 };
 
 /**
- * Closes an observation and forwards it to Zone Leader for review if needed.
+ * Closes an observation, either directly or forwards to Zone Leader for review.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -55,23 +50,54 @@ const closeObservation = async (req, res, next) => {
             return res.redirect('/dashboard?error=Observation not found');
         }
 
-        if (req.user.role === 'eic' && observation.eic === user.name) {
-            if (observation.severity === 'small' && observation.status === 'approved') {
-                observation.status = 'under_review';
+        if (observation.status === 'closed') {
+            return res.redirect('/dashboard?error=Observation already closed');
+        }
+
+        // Allow closing if:
+        // - User is admin or zone_leader
+        // - User is eic and observation is assigned to them
+        if (!['admin', 'zone_leader'].includes(req.user.role) && !(req.user.role === 'eic' && observation.eic === user.name)) {
+            return res.redirect('/dashboard?error=Unauthorized to close this observation');
+        }
+
+        // EIC-specific logic
+        if (req.user.role === 'eic') {
+            // Direct close for small severity in pending or forwarded status
+            if (observation.severity === 'small' && ['pending', 'forwarded'].includes(observation.status)) {
+                observation.status = 'closed';
                 observation.closedBy = user.name;
                 observation.closedAt = new Date();
+                observation.comments.push({
+                    userId: user._id,
+                    comment: 'Closed directly by EIC due to small severity',
+                    createdAt: new Date(),
+                });
                 await observation.save();
-                return res.redirect('/dashboard?success=Observation sent to Zone Leader for review');
-            } else if (observation.status === 'forwarded') {
+                return res.redirect('/dashboard?success=Observation closed successfully');
+            }
+            // Send to Zone Leader for review in other cases
+            if (observation.status === 'approved' || observation.status === 'forwarded') {
                 observation.status = 'under_review';
                 observation.closedBy = user.name;
                 observation.closedAt = new Date();
                 await observation.save();
                 return res.redirect('/dashboard?success=Observation sent to Zone Leader for review');
             }
+            return res.redirect('/dashboard?error=Invalid status or severity for EIC to close');
         }
 
-        return res.redirect('/dashboard?error=Unauthorized or invalid status');
+        // Admin or Zone Leader: Direct close
+        observation.status = 'closed';
+        observation.closedBy = user.name;
+        observation.closedAt = new Date();
+        observation.comments.push({
+            userId: user._id,
+            comment: `Closed by ${user.role === 'admin' ? 'Admin' : 'Zone Leader'}`,
+            createdAt: new Date(),
+        });
+        await observation.save();
+        res.redirect('/dashboard?success=Observation closed successfully');
     } catch (err) {
         handleError(err, res, '/dashboard', 'Close observation error:');
     }
@@ -265,9 +291,6 @@ const zoneLeaderCloseObservation = async (req, res, next) => {
         observation.status = 'closed';
         observation.closedBy = user.name;
         observation.closedAt = new Date();
-        await observation.save();
-
-        const normalUser = await User.findById(observation.userId);
         observation.comments.push({
             userId: user._id,
             comment: `Issue closed by Zone Leader. Status updated for ${normalUser.name}.`,
