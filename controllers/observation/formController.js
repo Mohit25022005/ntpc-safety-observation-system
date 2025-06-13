@@ -4,7 +4,7 @@ const { ZONES } = require('../../config/zones');
 const { zones, eicList, departments } = require('../../config/constants');
 const { handleError } = require('./utils');
 const cloudinary = require('../../config/cloudinary');
-
+const { getSimilarityScores  } = require('../../services/similarityService')
 /**
  * Renders the observation submission form.
  */
@@ -116,8 +116,30 @@ const submitNearMiss = async (req, res, next) => {
         }
 
         const { incidentDate, incidentZone, incidentLocation, incidentDetails } = req.body;
-        let uploadedFileUrl = null;
 
+        // 1. Fetch existing reports (last 30 days, same zone)
+        const recentReports = await NearMiss.find({
+            incidentZone,
+            incidentDate: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30) }
+        });
+
+        // 2. Check for similarity
+        const similarities = await getSimilarityScores(incidentDetails, recentReports);
+        const duplicates = similarities.filter(s => s.score > 0.85);
+
+        if (duplicates.length > 0) {
+            return res.render('report-near-miss', {
+                user,
+                zones,
+                errorMessage: '🚫 Similar incident already exists! Please review before resubmitting.',
+                successMessage: null,
+                previousInput: req.body,
+                similarReports: duplicates // optional for display
+            });
+        }
+
+        // 3. Upload file if exists
+        let uploadedFileUrl = null;
         if (req.file) {
             const result = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
@@ -136,6 +158,7 @@ const submitNearMiss = async (req, res, next) => {
             uploadedFileUrl = result.secure_url;
         }
 
+        // 4. Save if no duplicates
         const nearMiss = new NearMiss({
             userId: user.id,
             incidentDate: new Date(incidentDate),
@@ -147,12 +170,12 @@ const submitNearMiss = async (req, res, next) => {
 
         await nearMiss.save();
         res.redirect('/dashboard?success=Near miss incident reported successfully');
+
     } catch (err) {
         console.error('Submit near miss error:', err.message || err);
         handleError(err, res, '/report-near-miss', 'Submit near miss error:');
     }
 };
-
 /**
  * Views details of a near miss incident.
  */
