@@ -25,6 +25,7 @@ The NTPC Safety Management System allows users to record safety observations wit
 * ✅ **Feedback System** for success/error messages
 * 👁️ **View Observations Page** with file links
 * 🛡️ Planned support for edit/delete and authentication
+* 🤖 **NLP-powered Duplicate Detection** via Python microservice
 
 ---
 
@@ -36,6 +37,7 @@ The NTPC Safety Management System allows users to record safety observations wit
 * **Templating**: EJS (Embedded JavaScript)
 * **Middleware**: Multer (file uploads), Morgan (logging)
 * **Environment Management**: dotenv
+* **Duplicate Detection**: Python + FastAPI + Sentence Transformers
 
 ---
 
@@ -48,6 +50,7 @@ Make sure you have:
 * **Cloudinary Account** (sign up at [cloudinary.com](https://cloudinary.com))
 
   * Enable PDF delivery in **Settings → Security → Allow delivery of PDF and ZIP files**
+* **Python 3.8+** for NLP service
 
 ---
 
@@ -96,16 +99,21 @@ This project includes a Python microservice that uses **NLP** to detect **duplic
 * `sentence-transformers` for semantic similarity
 * `uvicorn` as the server runner
 
-### 🧪 How It Works
+### 📄 Python File Structure
 
-Before saving a near miss report, the Node.js backend calls the `/similarity` endpoint of the Python service. If similarity with past reports is **greater than 85%**, the submission is flagged as duplicate.
+```
+similarity_service/
+├── similarity_service.py   # FastAPI app with /similarity endpoint
+├── requirements.txt        # Required Python packages
+├── start.sh                # Bash script to start the service
+```
 
-### ▶️ Start or Restart the Python NLP Microservice
+### ▶️ Start or Restart the Similarity Service
 
-1. Navigate to the service folder:
+1. Go to the `similarity_service/` folder:
 
 ```bash
-cd nlp_service
+cd similarity_service
 ```
 
 2. Install dependencies:
@@ -117,23 +125,14 @@ pip install -r requirements.txt
 3. Start the service:
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+./start.sh
+```
+
+Or directly:
+
+```bash
+uvicorn similarity_service:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Available at: [http://localhost:8000/similarity](http://localhost:8000/similarity)
-
----
-
-
-### Git Commands to Push Code
-
-```bash
-git init
-git remote add origin https://github.com/your-username/ntpc-safety-system.git
-git add .
-git commit -m "Initial commit with Node + Python services"
-git push -u origin main
-```
-
----
 
