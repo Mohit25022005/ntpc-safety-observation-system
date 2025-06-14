@@ -89,7 +89,9 @@ const renderNearMissForm = async (req, res, next) => {
                 user,
                 successMessage: null,
                 errorMessage: 'Unauthorized access to near miss reporting',
-                zones
+                zones,
+                similarReports: [],          // ✅ added
+                previousInput: {}            // ✅ added
             });
         }
 
@@ -97,13 +99,16 @@ const renderNearMissForm = async (req, res, next) => {
             user,
             successMessage,
             errorMessage,
-            zones
+            zones,
+            similarReports: [],              // ✅ added
+            previousInput: {}                // ✅ added
         });
     } catch (err) {
         console.error('Render near miss form error:', err.message || err);
         handleError(err, res, '/dashboard', 'Render near miss form error:');
     }
 };
+
 
 /**
  * Submits a near miss incident report.
@@ -123,18 +128,25 @@ const submitNearMiss = async (req, res, next) => {
             incidentDate: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30) }
         });
 
-        // 2. Check for similarity
-        const similarities = await getSimilarityScores(incidentDetails, recentReports);
-        const duplicates = similarities.filter(s => s.score > 0.85);
+        // 2. Check for similarity (updated to handle new format)
+        const similarityResponse = await getSimilarityScores(incidentDetails, recentReports);
+        const isDuplicate = similarityResponse?.is_duplicate;
+        const similarMatches = similarityResponse?.similar_matches || [];
 
-        if (duplicates.length > 0) {
+        if (isDuplicate) {
+            const similarReportsWithLinks = similarMatches.map((report) => ({
+                id: report.id,
+                score: report.score.toFixed(2),
+                url: `/near-miss/${report.id}` // assumes such a route exists
+            }));
+
             return res.render('report-near-miss', {
                 user,
                 zones,
-                errorMessage: '🚫 Similar incident already exists! Please review before resubmitting.',
+                errorMessage: '🚫 Similar incident already exists! Please review the following:',
                 successMessage: null,
                 previousInput: req.body,
-                similarReports: duplicates // optional for display
+                similarReports: similarReportsWithLinks
             });
         }
 
@@ -176,6 +188,9 @@ const submitNearMiss = async (req, res, next) => {
         handleError(err, res, '/report-near-miss', 'Submit near miss error:');
     }
 };
+
+
+
 /**
  * Views details of a near miss incident.
  */

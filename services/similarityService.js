@@ -11,10 +11,14 @@ const getSimilarityScores = async (newText, existingReports) => {
             }))
         });
 
-        return response.data.similarities;
+        // response.data includes: is_duplicate and similar_matches
+        return {
+            is_duplicate: response.data.is_duplicate,
+            similar_matches: response.data.similar_matches
+        };
     } catch (err) {
         console.error('Error contacting similarity microservice:', err.message || err);
-        return [];
+        return { is_duplicate: false, similar_matches: [] };
     }
 };
 
