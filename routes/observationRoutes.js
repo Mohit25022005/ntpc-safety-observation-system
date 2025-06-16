@@ -37,7 +37,9 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Core form & dropdown APIs
-router.get('/', authMiddleware, renderForm);
+router.get('/', (req, res) => {
+    res.redirect('/auth/login'); // or res.render('index') for a public homepage
+});
 router.get('/zone-leaders', authMiddleware, getZoneLeaders);
 router.get('/departments', authMiddleware, getDepartments);
 router.get('/eic-options', authMiddleware, getEICOptions);
