@@ -1,4 +1,21 @@
 {
+  "name": "ntpc-management-system",
+  "version": "1.0.0",
+  "description": "NTPC Management System using Node.js, Express, MongoDB Atlas, and microservices",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "NTPC",
+    "Node.js",
+    "Express",
+    "MongoDB",
+    "Microservices"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
   "dependencies": {
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
@@ -13,7 +30,9 @@
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.1",
     "morgan": "^1.10.0",
-    "multer": "^2.0.0",
+    "multer": "^2.0.0"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.10"
   }
 }
