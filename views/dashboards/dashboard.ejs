@@ -10,34 +10,49 @@
       background-color: #f4f7fa;
       font-family: 'Arial', sans-serif;
       overflow-x: hidden;
-      font-size: 16px; /* Base font size for better readability */
+      font-size: 16px;
     }
     .sidebar {
-      background-color: #003087; /* NTPC blue */
+      background-color: #003087;
       color: #ffffff;
       height: 100vh;
       width: 250px;
       position: fixed;
       top: 0;
       left: 0;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, width 0.3s ease;
       z-index: 1000;
       box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
     .sidebar.collapsed {
-      transform: translateX(-100%);
+      transform: translateX(0);
+      width: 60px;
+    }
+    .sidebar.collapsed .sidebar-text,
+    .sidebar.collapsed .welcome-text,
+    .sidebar.collapsed .logo-text {
+      display: none;
+    }
+    .sidebar.collapsed .logo-img {
+      width: 40px;
+      height: 40px;
     }
     .sidebar-header {
-      padding: 1rem;
+      padding: 0.5rem 1rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
-      align-items: center;
-      position: relative;
+      flex-direction: column;
+      align-items: flex-start;
     }
     .logo-img {
       width: 40px;
       height: 40px;
       margin-right: 0.5rem;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      margin-top: 0.5rem;
     }
     .welcome-text {
       font-size: 0.85rem;
@@ -53,14 +68,14 @@
       font-size: 0.9rem;
     }
     .sidebar-nav .nav-link:hover {
-      background-color: #00205b; /* Darker blue on hover */
+      background-color: #00205b;
     }
     .sidebar-nav .nav-link.active {
-      background-color: #e91e63; /* Pink for active item */
+      background-color: #e91e63;
       color: #ffffff;
     }
     .sidebar-nav .dropdown-menu {
-      background-color: #0041c2; /* Lighter blue for dropdown */
+      background-color: #0041c2;
       border: none;
       width: 100%;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -94,16 +109,17 @@
       border: none;
       color: #ffffff;
       font-size: 1.2rem;
-      position: fixed;
-      top: 1rem;
-      left: 1rem;
-      z-index: 1100;
+      padding: 0.5rem;
+      cursor: pointer;
+      align-self: flex-end;
     }
     .content-panel {
-      margin-left: 0;
+      margin-left: 250px;
       padding: 1rem;
       transition: margin-left 0.3s ease;
-      padding-top: 3.5rem; /* Space for toggle button */
+    }
+    .content-panel.collapsed {
+      margin-left: 60px;
     }
     .header-id {
       background-color: #e9ecef;
@@ -172,16 +188,6 @@
       }
       .sidebar.collapsed {
         width: 60px;
-        transform: translateX(0);
-      }
-      .sidebar.collapsed .sidebar-text,
-      .sidebar.collapsed .welcome-text,
-      .sidebar.collapsed .logo-text {
-        display: none;
-      }
-      .sidebar.collapsed .logo-img {
-        width: 40px;
-        height: 40px;
       }
       .content-panel {
         margin-left: 250px;
@@ -189,22 +195,14 @@
       .content-panel.collapsed {
         margin-left: 60px;
       }
-      .toggle-btn {
-        position: absolute;
-        left: auto;
-        right: 1rem;
-        top: 1rem;
-      }
     }
     @media (max-width: 991px) {
       .sidebar {
         transform: translateX(-100%);
       }
-      .sidebar.collapsed {
-        transform: translateX(-100%);
-      }
       .sidebar.active {
         transform: translateX(0);
+        width: 250px;
       }
       .content-panel {
         margin-left: 0;
@@ -228,7 +226,7 @@
         -webkit-overflow-scrolling: touch;
       }
       .table thead {
-        display: none; /* Hide table headers on mobile */
+        display: none;
       }
       .table tbody tr {
         display: block;
@@ -267,18 +265,18 @@
   </style>
 </head>
 <body>
-  <!-- Toggle Button for Mobile -->
-  <button class="toggle-btn" id="toggleSidebar">
-    <i class="bi bi-list" aria-label="Toggle Sidebar"></i>
-  </button>
-
   <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar collapsed" id="sidebar">
     <div class="sidebar-header">
-      <img src="/images/ntpc-logo.png" alt="NTPC Logo" class="logo-img">
-      <div>
-        <h5 class="logo-text mb-0">NTPC Safety</h5>
-        <div class="welcome-text">Welcome - <%= user.name %></div>
+      <button class="toggle-btn" id="toggleSidebar">
+        <i class="bi bi-list" aria-label="Toggle Sidebar"></i>
+      </button>
+      <div class="logo-container">
+        <img src="/images/ntpc-logo.png" alt="NTPC Logo" class="logo-img">
+        <div>
+          <h5 class="logo-text mb-0">NTPC Safety</h5>
+          <div class="welcome-text">Welcome - <%= user.name %></div>
+        </div>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -348,7 +346,7 @@
   </div>
 
   <!-- Content Panel -->
-  <div class="content-panel" id="contentPanel">
+  <div class="content-panel collapsed" id="contentPanel">
     <div class="container-fluid">
       <!-- Statistics Summary -->
       <div class="row mb-3">
@@ -529,8 +527,11 @@
     const contentPanel = document.getElementById('contentPanel');
 
     toggleSidebar.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
       sidebar.classList.toggle('collapsed');
+      contentPanel.classList.toggle('collapsed');
+      if (window.innerWidth < 992) {
+        sidebar.classList.toggle('active');
+      }
     });
 
     // Confirm logout
@@ -569,8 +570,10 @@
         document.querySelectorAll('.dropdown-submenu .dropdown-menu.show').forEach(menu => {
           menu.classList.remove('show');
         });
-        sidebar.classList.remove('active');
-        sidebar.classList.add('collapsed');
+        if (window.innerWidth < 992) {
+          sidebar.classList.remove('active');
+          sidebar.classList.add('collapsed');
+        }
       }
     });
 
