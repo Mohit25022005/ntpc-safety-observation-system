@@ -35,7 +35,7 @@ connectDB();
 
 // Routes
 app.use('/', observationRoutes);
-app.use('/auth', authRoutes);
+app.use('/', authRoutes);
 
 // Error Handler
 app.use(errorHandler);
